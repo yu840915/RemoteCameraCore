@@ -1,0 +1,3 @@
+public enum CameraHubAdvertisingServiceEvent: Sendable {
+
+}
