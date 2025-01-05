@@ -1,18 +1,19 @@
+import AsyncUtils
 import CameraCore
 import Combine
 import Testing
 
 @testable import RemoteCameraCore
 
-@Suite("Hub connection tests")
-struct CameraHubConnectionTests {
+@Suite("Hub controller binding tests")
+struct CameraHubControllerBindingTests {
   @Test
   func routeCommand() async throws {
     var commands: [CameraHubCommands] = []
     var bag = Set<AnyCancellable>()
     let hub = MockHub()
     let controller = MockController()
-    let connection = CameraHubConnection(hub: hub, controller: controller)
+    let sut = CameraHubControllerBinding(hub: hub, controller: controller)
 
     try await confirmation { called in
       hub.onCommands.sink { command in
@@ -34,7 +35,7 @@ struct CameraHubConnectionTests {
     }
 
     #expect(commands.count == 1)
-    print(connection)
+    print(sut)
   }
 
   @Test
@@ -44,7 +45,7 @@ struct CameraHubConnectionTests {
     let hub = MockHub()
     let controller = MockController()
     let capture = MockCapture()
-    let connection = CameraHubConnection(hub: hub, controller: controller)
+    let sut = CameraHubControllerBinding(hub: hub, controller: controller)
 
     try await confirmation { called in
       controller.onEvent.sink {
@@ -65,7 +66,7 @@ struct CameraHubConnectionTests {
     } else {
       assertionFailure()
     }
-    print(connection)
+    print(sut)
   }
 
   @Test
@@ -75,7 +76,7 @@ struct CameraHubConnectionTests {
     let hub = MockHub()
     let controller = MockController()
     let camera = CameraDescriptor(id: "mockCamera", name: "Camera", position: .external)
-    var connection: CameraHubConnection?
+    var sut: CameraHubControllerBinding?
 
     try await confirmation("State update", expectedCount: 3) { called in
       controller.onState.sink {
@@ -84,8 +85,9 @@ struct CameraHubConnectionTests {
         states.append(state)
         called()
       }.store(in: &bag)
-      connection = CameraHubConnection(hub: hub, controller: controller)
+      sut = CameraHubControllerBinding(hub: hub, controller: controller)
       var value = hub.state$.nonSendable.value
+      try await Task.sleep(nanoseconds: 1)
       value.name = "New name"
       hub.state$.nonSendable.send(value)
       try await Task.sleep(nanoseconds: 1)
@@ -97,7 +99,7 @@ struct CameraHubConnectionTests {
     #expect(states.map { $0.id } == ["mockHub", "mockHub", "mockHub"])
     #expect(states.map { $0.name } == ["", "New name", "New name"])
     #expect(states.map { $0.cameras.count } == [0, 0, 1])
-    print(connection!)
+    print(sut!)
   }
 
   @Test
@@ -106,7 +108,7 @@ struct CameraHubConnectionTests {
     var bag = Set<AnyCancellable>()
     let hub = MockHub()
     let controller = MockController()
-    let connection = CameraHubConnection(hub: hub, controller: controller)
+    let sut = CameraHubControllerBinding(hub: hub, controller: controller)
 
     try await confirmation { called in
       controller.onError.sink { error in
@@ -118,7 +120,7 @@ struct CameraHubConnectionTests {
     }
 
     #expect(errors.count == 1)
-    print(connection)
+    print(sut)
   }
 
   @Test
@@ -127,7 +129,7 @@ struct CameraHubConnectionTests {
     var bag = Set<AnyCancellable>()
     let hub = MockHub()
     let controller = MockController()
-    let connection = CameraHubConnection(hub: hub, controller: controller)
+    let sut = CameraHubControllerBinding(hub: hub, controller: controller)
 
     try await confirmation { called in
       controller.onError.sink { error in
@@ -139,7 +141,7 @@ struct CameraHubConnectionTests {
     }
 
     #expect(errors.count == 1)
-    print(connection)
+    print(sut)
   }
 
   @Test
@@ -148,7 +150,7 @@ struct CameraHubConnectionTests {
     var bag = Set<AnyCancellable>()
     let hub = MockHub()
     let controller = MockController()
-    let connection = CameraHubConnection(hub: hub, controller: controller)
+    let sut = CameraHubControllerBinding(hub: hub, controller: controller)
 
     try await confirmation { called in
       controller.onError.sink { error in
@@ -160,13 +162,13 @@ struct CameraHubConnectionTests {
     }
 
     #expect(errors.count == 1)
-    print(connection)
+    print(sut)
   }
 }
 
 struct MockError: Error {}
 
-final class MockController: RemoteCameraHubControllerPort {
+final class MockController: CameraHubControllerPort {
   var onCommand: any Publisher<CameraCore.CameraHubCommands, Never> {
     command$.nonSendable
   }
@@ -245,13 +247,6 @@ final class MockHub: CameraHubServicePort {
   func perform(_ command: CameraCore.CameraHubCommands) async throws {
     commands$.nonSendable.send(command)
     print("Command sent")
-  }
-}
-
-public final class NonSendable<T>: Sendable {
-  public nonisolated(unsafe) let nonSendable: T
-  public init(_ nonSendable: T) {
-    self.nonSendable = nonSendable
   }
 }
 

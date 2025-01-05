@@ -2,7 +2,7 @@ import CameraCore
 import Combine
 
 public protocol CameraHubAdvertisingServicePort: Sendable {
-  var state: CameraHubDiscoveryServiceState { get }
+  var state: CameraHubAdvertisingServiceState { get }
   var onState: any Publisher<CameraHubAdvertisingServiceState, Error> { get }
   var onEvent: any Publisher<CameraHubAdvertisingServiceEvent, Error> { get }
 

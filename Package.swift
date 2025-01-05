@@ -19,7 +19,14 @@ let package = Package(
             targets: ["RemoteCameraCore"])
     ],
     dependencies: [
-        .package(name: "CameraCore", path: "file:///Users/lixuanyu/swift_proj.nosync/CameraControl")
+        .package(
+            name: "CameraCore",
+            path: "file:///Users/lixuanyu/swift_proj.nosync/CameraControl"
+        ),
+        .package(
+            name: "AsyncUtils",
+            path: "file:///Users/lixuanyu/swift_proj.nosync/AsyncUtils"
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -32,7 +39,10 @@ let package = Package(
         ),
         .testTarget(
             name: "RemoteCameraCoreTests",
-            dependencies: ["RemoteCameraCore"]
+            dependencies: [
+                "RemoteCameraCore",
+                "AsyncUtils",
+            ]
         ),
     ]
 )

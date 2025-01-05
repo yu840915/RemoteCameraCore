@@ -1,12 +1,12 @@
 import CameraCore
 import Combine
 
-public actor CameraHubConnection {
+public actor CameraHubControllerBinding {
   let hub: CameraHubServicePort
-  let controller: RemoteCameraHubControllerPort
+  let controller: CameraHubControllerPort
   private nonisolated(unsafe) var bag = Set<AnyCancellable>()
 
-  init(hub: CameraHubServicePort, controller: RemoteCameraHubControllerPort) {
+  init(hub: CameraHubServicePort, controller: CameraHubControllerPort) {
     self.hub = hub
     self.controller = controller
     controller.onCommand.sink { [weak self] command in
@@ -35,13 +35,13 @@ public actor CameraHubConnection {
   }
 }
 
-extension CameraHubConnection {
+extension CameraHubControllerBinding {
   public enum ConnectionError: Error {
     case eventPublisherClosedUnexpectedly
     case statePublisherClosedUnexpectedly
   }
 }
-extension CameraHubConnection {
+extension CameraHubControllerBinding {
   func routeCommand(_ command: CameraHubCommands) async {
     do {
       try await hub.perform(command)

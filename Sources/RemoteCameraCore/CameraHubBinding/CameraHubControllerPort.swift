@@ -1,7 +1,7 @@
 import CameraCore
 import Combine
 
-public protocol RemoteCameraHubControllerPort: Sendable {
+public protocol CameraHubControllerPort: Sendable {
   var onCommand: any Publisher<CameraHubCommands, Never> { get }
 
   func update(_ state: CameraHubState) async
