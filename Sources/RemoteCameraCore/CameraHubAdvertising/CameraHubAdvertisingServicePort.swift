@@ -1,10 +1,9 @@
 import CameraCore
 import Combine
 
-public protocol CameraHubAdvertisingServicePort: Sendable {
-  var state: CameraHubAdvertisingServiceState { get }
-  var onState: any Publisher<CameraHubAdvertisingServiceState, Error> { get }
-  var onEvent: any Publisher<CameraHubAdvertisingServiceEvent, Error> { get }
-
-  func perform(_ command: CameraHubAdvertisingServiceCommand) async throws
-}
+public protocol CameraHubAdvertisingServicePort: StateServiceClientPort
+where
+  State == CameraHubAdvertisingServiceState,
+  Event == CameraHubAdvertisingServiceEvent,
+  Command == CameraHubAdvertisingServiceCommand
+{}
