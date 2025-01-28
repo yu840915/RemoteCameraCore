@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "RemoteCameraCore",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v15),
         .iOS(.v17),
         .watchOS(.v8),
         .tvOS(.v15),

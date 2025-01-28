@@ -1,7 +1,7 @@
 import CameraCore
 import Combine
 
-public protocol CameraHubAdvertisingServicePort: StateServiceClientPort
+public protocol CameraHubAdvertisingServicePort: StateServicePort
 where
   State == CameraHubAdvertisingServiceState,
   Event == CameraHubAdvertisingServiceEvent,
