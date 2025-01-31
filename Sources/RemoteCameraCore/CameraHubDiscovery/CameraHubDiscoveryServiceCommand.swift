@@ -12,3 +12,7 @@ public struct CameraHubServiceArguments: Sendable {
     self.hub = hub
   }
 }
+
+public enum CameraHubDiscoveryServiceMessage: Sendable {
+  case invite(ControlRequest)
+}
