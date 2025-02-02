@@ -20,22 +20,16 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            name: "CameraCore",
-            path: "file:///Users/lixuanyu/swift_proj.nosync/CameraControl"
-        ),
-        .package(
             name: "AsyncUtils",
             path: "file:///Users/lixuanyu/swift_proj.nosync/AsyncUtils"
-        ),
+        )
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "RemoteCameraCore",
-            dependencies: [
-                "CameraCore"
-            ]
+            dependencies: []
         ),
         .testTarget(
             name: "RemoteCameraCoreTests",

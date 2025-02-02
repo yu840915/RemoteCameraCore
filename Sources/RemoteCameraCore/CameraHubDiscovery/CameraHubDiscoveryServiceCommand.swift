@@ -1,5 +1,3 @@
-import CameraCore
-
 public enum CameraHubDiscoveryServiceCommand: Sendable {
   case requestHub(args: CameraHubServiceArguments)
   case start

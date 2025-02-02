@@ -1,4 +1,3 @@
-import CameraCore
 import Combine
 
 public protocol CameraHubAdvertisingServicePort: StateServicePort

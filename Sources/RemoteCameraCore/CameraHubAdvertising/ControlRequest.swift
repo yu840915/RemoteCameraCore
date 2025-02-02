@@ -1,5 +1,3 @@
-import CameraCore
-
 public struct ControlRequest: Sendable {
   public let controller: CameraControllerDescriptor
   public let hub: CameraHubDescriptor
