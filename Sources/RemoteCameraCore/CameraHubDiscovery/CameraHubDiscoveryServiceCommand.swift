@@ -11,6 +11,6 @@ public struct CameraHubServiceArguments: Sendable {
   }
 }
 
-public enum CameraHubDiscoveryServiceMessage: Sendable {
+public enum CameraHubDiscoveryServiceRemoteCommand: Sendable {
   case invite(ControlRequest)
 }

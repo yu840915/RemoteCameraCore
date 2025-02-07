@@ -4,5 +4,5 @@ where
   Event == CameraHubEvent,
   Command == CameraHubCommands
 {
-  var id: String { get }
+  var controllerDescriptor: CameraControllerDescriptor { get }
 }

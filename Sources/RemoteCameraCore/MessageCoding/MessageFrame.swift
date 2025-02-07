@@ -1,5 +1,8 @@
 public typealias MessageChannelID = UInt16
 
+public typealias MessageFrameEncoder<Data> = MessageEncodingServicePort<MessageFrame, Data>
+public typealias MessageFrameDecoder<Data> = MessageDecodingServicePort<Data, MessageFrame>
+
 public struct MessageFrame: Sendable {
   public enum MessageType: Sendable {
     case stateUpdate
