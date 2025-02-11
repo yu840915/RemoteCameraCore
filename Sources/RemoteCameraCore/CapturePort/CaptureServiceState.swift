@@ -2,6 +2,8 @@ public struct CaptureServiceState: Sendable {
   public var camera: CameraDescriptor?
   public var configuration = CameraConfiguration()
   public var capabilities = CameraCapabilities()
+  public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
+    .FeatureTable()
   public init() {}
 }
 
@@ -29,7 +31,6 @@ public struct CameraConfiguration: Sendable {
 }
 
 public struct CameraCapabilities: Sendable {
-  public var featureTable = CaptureServiceCommand.ConfigurationCommand.FeatureTable()
   public var torchModes: [TorchMode] = []
   public var flashModes: [FlashMode] = []
   public var zoomFactorRange: ValueRange<Double>?
