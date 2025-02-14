@@ -37,4 +37,14 @@ struct ValueRangeTests {
 
     #expect(range.clamp(value) == expected)
   }
+
+  @Test
+  func equatable() async throws {
+    let range1 = ValueRange(min: 0, max: 100)
+    let range2 = ValueRange(min: 0, max: 100)
+    let range3 = ValueRange(min: 0, max: 101)
+
+    #expect(range1 == range2)
+    #expect(range1 != range3)
+  }
 }

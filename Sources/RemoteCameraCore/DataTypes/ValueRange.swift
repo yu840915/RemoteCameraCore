@@ -33,3 +33,9 @@ extension ValueRange {
     case outOfRange
   }
 }
+
+extension ValueRange: Equatable {
+  public static func == (lhs: ValueRange, rhs: ValueRange) -> Bool {
+    lhs.min == rhs.min && lhs.max == rhs.max
+  }
+}

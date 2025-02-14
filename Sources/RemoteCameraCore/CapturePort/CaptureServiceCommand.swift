@@ -30,22 +30,22 @@ extension CaptureServiceCommand {
     case lockWhiteBalanceWithGrayWorld
 
     public struct FeatureTable: CommandAvailabilityChecking {
-      var setTorchMode = false
-      var setFlashMode = false
-      var setZoomFactor = false
-      var smoothZoom = false
-      var setHDR = false
-      var setFocusMode = false
-      var setLensPosition = false
-      var setFocusPointOfInterest = false
-      var setExposureMode = false
-      var setExposurePointOfInterest = false
-      var setExposureDuration = false
-      var setISO = false
-      var setWhiteBalanceMode = false
-      var setTemperatureAndTint = false
-      var setWhiteBalanceGains = false
-      var lockWhiteBalanceWithGrayWorld = false
+      public var setTorchMode = false
+      public var setFlashMode = false
+      public var setZoomFactor = false
+      public var smoothZoom = false
+      public var setHDR = false
+      public var setFocusMode = false
+      public var setLensPosition = false
+      public var setFocusPointOfInterest = false
+      public var setExposureMode = false
+      public var setExposurePointOfInterest = false
+      public var setExposureDuration = false
+      public var setISO = false
+      public var setWhiteBalanceMode = false
+      public var setTemperatureAndTint = false
+      public var setWhiteBalanceGains = false
+      public var lockWhiteBalanceWithGrayWorld = false
 
       func canPerform(_ command: ConfigurationCommand) -> Bool {
         switch command {
@@ -67,6 +67,8 @@ extension CaptureServiceCommand {
         case .lockWhiteBalanceWithGrayWorld: return lockWhiteBalanceWithGrayWorld
         }
       }
+
+      public init() {}
     }
   }
 

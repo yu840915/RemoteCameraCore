@@ -1,4 +1,4 @@
-public struct CaptureServiceState: Sendable {
+public struct CaptureServiceState: Sendable, Equatable {
   public var camera: CameraDescriptor?
   public var configuration = CameraConfiguration()
   public var capabilities = CameraCapabilities()
@@ -7,11 +7,11 @@ public struct CaptureServiceState: Sendable {
   public init() {}
 }
 
-public struct CameraConfiguration: Sendable {
+public struct CameraConfiguration: Sendable, Equatable {
   public var torchMode: TorchMode?
   public var flashMode: FlashMode?
   public var zoomFactor: Double?
-  public var isHDRon: Bool = false
+  public var isHDRon: Bool?
   public var lensAperture: Double?
 
   public var focusMode: FocusMode?
@@ -30,7 +30,7 @@ public struct CameraConfiguration: Sendable {
   public init() {}
 }
 
-public struct CameraCapabilities: Sendable {
+public struct CameraCapabilities: Sendable, Equatable {
   public var torchModes: [TorchMode] = []
   public var flashModes: [FlashMode] = []
   public var zoomFactorRange: ValueRange<Double>?
@@ -49,4 +49,11 @@ public struct CameraCapabilities: Sendable {
   public var whiteBalanceBlueGainsRange: ValueRange<Double>?
 
   public init() {}
+}
+
+public enum CaptureServiceStateUpdateMessage: Sendable {
+  case cameraDescriptor(CameraDescriptor)
+  case configuration(CameraConfiguration)
+  case capabilities(CameraCapabilities)
+  case availableConfigurationCommands(CaptureServiceCommand.ConfigurationCommand.FeatureTable)
 }
