@@ -7,7 +7,7 @@ import Testing
 struct CameraHubControllerBindingTests {
   @Test
   func routeCommand() async throws {
-    var commands: [CameraHubCommands] = []
+    var commands: [CameraHubCommand] = []
     var bag = Set<AnyCancellable>()
     let hub = MockHub()
     let controller = MockController()
@@ -167,12 +167,12 @@ struct CameraHubControllerBindingTests {
 struct MockError: Error {}
 
 final class MockController: StateServiceClientPort {
-  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommands, Never> {
+  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, Never> {
     command$.nonSendable
   }
 
   let command$ = NonSendable(
-    PassthroughSubject<CameraHubCommands, Never>()
+    PassthroughSubject<CameraHubCommand, Never>()
   )
 
   let state$ = NonSendable(
@@ -215,9 +215,9 @@ final class MockController: StateServiceClientPort {
 final class MockHub: CameraHubServicePort {
   let id: String = "mockHub"
 
-  let commands$ = NonSendable(PassthroughSubject<CameraHubCommands, Never>())
+  let commands$ = NonSendable(PassthroughSubject<CameraHubCommand, Never>())
 
-  var onCommands: any Publisher<CameraHubCommands, Never> {
+  var onCommands: any Publisher<CameraHubCommand, Never> {
     commands$.nonSendable
   }
 
@@ -242,7 +242,7 @@ final class MockHub: CameraHubServicePort {
     event$.nonSendable
   }
 
-  func perform(_ command: RemoteCameraCore.CameraHubCommands) async throws {
+  func perform(_ command: RemoteCameraCore.CameraHubCommand) async throws {
     commands$.nonSendable.send(command)
     print("Command sent")
   }

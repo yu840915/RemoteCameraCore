@@ -1,4 +1,4 @@
-public enum CameraHubCommands: Sendable {
+public enum CameraHubCommand: Sendable {
   case requestCapture(args: CaptureServiceArguments)
 }
 

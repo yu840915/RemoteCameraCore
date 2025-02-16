@@ -1,4 +1,4 @@
-public enum CameraHubServiceCommand: Sendable {
+public enum CameraHubServerCommand: Sendable {
   case startAdvertising
   case stopAdvertising
   case acceptRequest(request: ControlRequest)
