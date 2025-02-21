@@ -1,8 +1,9 @@
 import Combine
 
 public enum BindingError: Error {
-  case eventPublisherClosedUnexpectedly
-  case statePublisherClosedUnexpectedly
+  case eventPublisherClosed
+  case statePublisherClosed
+  case commandPublisherClosed
 }
 
 public
@@ -15,11 +16,14 @@ where Service.Command == Client.Command, Service.Event == Client.Event {
   public init(client: Client, service: Service) {
     self.client = client
     self.service = service
-    client.onCommand.sink { [weak self] command in
+    client.onCommand.sink { completion in
+
+    } receiveValue: { [weak self] command in
       Task { [weak self] in
         await self?.routeCommand(command)
       }
     }.store(in: &bag)
+
     service.onEvent.sink { [weak self] completion in
       Task { [weak self] in
         await self?.handleHubEventCompletion(completion)
@@ -49,7 +53,7 @@ extension EventServiceClientBinding {
   func handleHubEventCompletion(_ completion: Subscribers.Completion<Error>) async {
     switch completion {
     case .finished:
-      await client.onError(BindingError.eventPublisherClosedUnexpectedly)
+      await client.onError(BindingError.eventPublisherClosed)
     case .failure(let error):
       await client.onError(error)
     }
@@ -90,7 +94,7 @@ extension StateServiceClientBinding {
   func handleHubStateCompletion(_ completion: Subscribers.Completion<Error>) async {
     switch completion {
     case .finished:
-      await client.onError(BindingError.statePublisherClosedUnexpectedly)
+      await client.onError(BindingError.statePublisherClosed)
     case .failure(let error):
       await client.onError(error)
     }

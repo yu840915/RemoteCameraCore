@@ -1,6 +1,8 @@
 import Combine
 import RemoteCameraCore
 
+struct MockError: Error {}
+
 final class DummyAdvertiserFactory: CameraHubAdvertiserFactoryPort, @unchecked Sendable {
   var adversisers: [DummyAdvertiser] = []
   func createHubAdvertiser(
@@ -40,23 +42,26 @@ final class DummyAdvertiser: CameraHubAdvertisingServicePort, @unchecked Sendabl
 
 }
 
-final class DummyController: CameraHubClientPort, @unchecked Sendable {
+final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
   var controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor
-  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, Never>
+  var command$: PassthroughSubject<RemoteCameraCore.CameraHubCommand, any Error>
+  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, any Error> {
+    command$
+  }
   var updates: [RemoteCameraCore.CameraHubState] = []
-  var events: [RemoteCameraCore.CameraHubRemoteEvent] = []
+  var events: [RemoteCameraCore.CameraHubEvent] = []
   var errors: [any Error] = []
 
   init(controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor) {
     self.controllerDescriptor = controllerDescriptor
-    onCommand = Empty().eraseToAnyPublisher()
+    command$ = PassthroughSubject()
   }
 
   func update(_ state: RemoteCameraCore.CameraHubState) async {
     updates.append(state)
   }
 
-  func notify(_ event: RemoteCameraCore.CameraHubRemoteEvent) async {
+  func notify(_ event: RemoteCameraCore.CameraHubEvent) async {
     events.append(event)
   }
 
@@ -88,6 +93,34 @@ final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
   }
 
   func perform(_ command: RemoteCameraCore.CameraHubCommand) async throws {
+    commands.append(command)
+  }
+}
+
+final class DummyCapture: CaptureServicePort, @unchecked Sendable {
+  var onCapturedBuffer: any Publisher<RemoteCameraCore.BufferWrapper, Never> {
+    Empty().eraseToAnyPublisher()
+  }
+
+  var state$: CurrentValueSubject<CaptureServiceState, any Error>
+  var event$: PassthroughSubject<CaptureServiceEvent, any Error>
+  var state: CaptureServiceState {
+    state$.value
+  }
+  var onState: any Publisher<CaptureServiceState, any Error> {
+    state$
+  }
+  var onEvent: any Publisher<CaptureServiceEvent, any Error> {
+    event$
+  }
+  var commands: [CaptureServiceCommand] = []
+
+  init(state: CaptureServiceState = .init()) {
+    state$ = CurrentValueSubject(state)
+    event$ = PassthroughSubject()
+  }
+
+  func perform(_ command: CaptureServiceCommand) async throws {
     commands.append(command)
   }
 }

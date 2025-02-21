@@ -10,6 +10,13 @@ actor CameraHubServerActor {
   var eventSequence: AsyncThrowingStream<CameraHubServerEvent, any Error>?
   let state$ = CurrentValueSubject<CameraHubServerState, any Error>(.init())
   let event$ = PassthroughSubject<CameraHubServerEvent, any Error>()
+  private var bindings: [CameraHubServiceClientBinding] = [] {
+    didSet {
+      var update = state$.value
+      update.connectedControllers = bindings.map { $0.client.controllerDescriptor }
+      state$.value = update
+    }
+  }
 
   init(
     localHub: some CameraHubServicePort,
@@ -24,6 +31,10 @@ actor CameraHubServerActor {
     switch command {
     case .startAdvertising:
       try await startAdvertising()
+    case .stopAdvertising:
+      try await stopAdvertising()
+    case let .acceptRequest(request):
+      try await acceptRequest(request)
     default:
       break
     }
@@ -88,7 +99,13 @@ extension CameraHubServerActor {
         await self?.onAdvertiserState(state)
       }
     }.store(in: &bag)
-    
+    advertiser.onEvent.sink { [weak self] completion in
+
+    } receiveValue: { [weak self] event in
+      Task { [weak self] in
+        await self?.onAdvertiserEvent(event)
+      }
+    }.store(in: &bag)
     self.advertiser = advertiser
     adversiserBag = bag
     return advertiser
@@ -101,7 +118,39 @@ extension CameraHubServerActor {
     state$.value = update
   }
 
+  fileprivate func onAdvertiserEvent(_ event: CameraHubAdvertisingServiceEvent) async {
+    switch event {
+    case let .cameraHubClient(client):
+      let binding = await CameraHubServiceClientBinding(client: client, service: localHub)
+      bindings.append(binding)
+    }
+  }
+
   fileprivate func startAdvertising() async throws {
     try await prepareAdvertiser().perform(.start)
+  }
+
+  fileprivate func stopAdvertising() async throws {
+    guard let advertiser = advertiser else {
+      return
+    }
+    try await advertiser.perform(.stop)
+    removeAdvertiser()
+  }
+
+  fileprivate func acceptRequest(_ request: ControlRequest) async throws {
+    guard let advertiser = advertiser else {
+      return
+    }
+    try await advertiser.perform(.acceptRequest(request: request))
+  }
+
+  fileprivate func removeAdvertiser() {
+    adversiserBag = []
+    advertiser = nil
+    var update = state$.value
+    update.isAdvertising = false
+    update.requests = []
+    state$.value = update
   }
 }

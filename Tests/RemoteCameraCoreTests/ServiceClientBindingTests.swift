@@ -164,15 +164,14 @@ struct CameraHubControllerBindingTests {
   }
 }
 
-struct MockError: Error {}
 
 final class MockController: StateServiceClientPort {
-  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, Never> {
+  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, any Error> {
     command$.nonSendable
   }
 
   let command$ = NonSendable(
-    PassthroughSubject<CameraHubCommand, Never>()
+    PassthroughSubject<CameraHubCommand, any Error>()
   )
 
   let state$ = NonSendable(

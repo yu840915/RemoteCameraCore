@@ -1,3 +1,3 @@
 enum TestError: Error {
-  case preconditionFailed
+  case conditionFailed
 }

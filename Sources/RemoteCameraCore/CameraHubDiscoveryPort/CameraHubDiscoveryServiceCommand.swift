@@ -4,7 +4,7 @@ public enum CameraHubDiscoveryServiceCommand: Sendable {
   case stop
 }
 
-public struct CameraHubServiceArguments: Sendable {
+public struct CameraHubServiceArguments: Sendable, Equatable {
   public let hub: CameraHubDescriptor
   public init(hub: CameraHubDescriptor) {
     self.hub = hub

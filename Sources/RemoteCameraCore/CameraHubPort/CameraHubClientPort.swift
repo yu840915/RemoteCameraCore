@@ -1,7 +1,7 @@
 public protocol CameraHubClientPort: StateServiceClientPort
 where
   State == CameraHubState,
-  Event == CameraHubRemoteEvent,
+  Event == CameraHubEvent,
   Command == CameraHubCommand
 {
   var controllerDescriptor: CameraControllerDescriptor { get }
