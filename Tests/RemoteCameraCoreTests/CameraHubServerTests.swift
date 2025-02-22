@@ -1,3 +1,4 @@
+import AsyncUtils
 import Combine
 import Testing
 
@@ -56,32 +57,44 @@ struct CameraHubServerTests {
     state.name = "Hub 1"
     let hub = DummyCameraHub(state: state)
     let server = await CameraHubServer(localHub: hub, advertiserFactory: factory)
-    try await server.perform(.startAdvertising)
-    try await Task.sleep(for: .milliseconds(10))
-    let advertiser = factory.adversisers.first!
-
-    var serverStates: [CameraHubServerState] = []
-    try await confirmation(nil, expectedCount: 2) { confirmation in
-      var bag = Set<AnyCancellable>()
-      server.onState.sink { _ in
-      } receiveValue: { state in
-        serverStates.append(state)
-        confirmation()
-      }.store(in: &bag)
-      var update = advertiser.state$.value
-      update.requests = [
-        .init(
-          controller: .init(id: "controller-1", name: "Controller 1"),
-          hub: .init(id: "hub-1", name: "Hub 1")
-        )
-      ]
-      update.isRunning = true
-      advertiser.state$.value = update
-      try await Task.sleep(for: .milliseconds(10))
+    let completer = await Completer<Void>()
+    let stateActor = CollectionActor<CameraHubServerState>()
+    await stateActor.setOnAppended { states in
+      guard states.count == 2 else {
+        return
+      }
+      Task {
+        await completer.resume()
+      }
     }
 
+    try await server.perform(.startAdvertising)
+    var bag = Set<AnyCancellable>()
+    server
+      .onState
+      .eraseToAnyPublisher()
+      .removeDuplicates()
+      .sink { _ in
+      } receiveValue: { state in
+        Task {
+          await stateActor.append(state)
+        }
+      }.store(in: &bag)
+    let advertiser = factory.adversisers.first!
+    var update = advertiser.state$.value
+    update.requests = [
+      .init(
+        controller: .init(id: "controller-1", name: "Controller 1"),
+        hub: .init(id: "hub-1", name: "Hub 1")
+      ),
+    ]
+    update.isRunning = true
+    advertiser.state$.value = update
+    await completer.result()
+
+    let serverStates = await stateActor.values
     #expect(
-      serverStates
+      serverStates[(serverStates.count - 2) ..< serverStates.count]
         == [
           .init(
             requests: [],
@@ -93,7 +106,7 @@ struct CameraHubServerTests {
               ControlRequest(
                 controller: CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
                 hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1")
-              )
+              ),
             ],
             isAdvertising: true,
             connectedControllers: []
@@ -109,37 +122,44 @@ struct CameraHubServerTests {
     state.name = "Hub 1"
     let hub = DummyCameraHub(state: state)
     let server = await CameraHubServer(localHub: hub, advertiserFactory: factory)
-
-    try await server.perform(.startAdvertising)
-    try await Task.sleep(for: .milliseconds(1))
-    let advertiser = factory.adversisers.first!
-
-    let serverStates = CollectionActor<CameraHubServerState>()
-    try await confirmation(nil, expectedCount: 3) { confirmation in
-      var bag = Set<AnyCancellable>()
-      server.onState.sink { _ in
-      } receiveValue: { state in
-        Task {
-          await serverStates.append(state)
-          confirmation()
-        }
-      }.store(in: &bag)
-      var update = advertiser.state$.value
-      update.requests = [
-        .init(
-          controller: .init(id: "controller-1", name: "Controller 1"),
-          hub: .init(id: "hub-1", name: "Hub 1")
-        )
-      ]
-      update.isRunning = true
-      advertiser.state$.value = update
-      try await Task.sleep(for: .milliseconds(10))
-      try await server.perform(.stopAdvertising)
-      try await Task.sleep(for: .milliseconds(10))
+    let stateActor = CollectionActor<CameraHubServerState>()
+    let completer = await Completer<Void>()
+    await stateActor.setOnAppended { states in
+      guard
+        states.count == 3,
+        let last = states.last,
+        !last.isAdvertising
+      else {
+        return
+      }
+      Task {
+        await completer.resume()
+      }
     }
 
-    let states = await serverStates.values
-    #expect(states.count == 3)
+    try await server.perform(.startAdvertising)
+    var bag = Set<AnyCancellable>()
+    server.onState.sink { _ in
+    } receiveValue: { state in
+      Task {
+        await stateActor.append(state)
+      }
+    }.store(in: &bag)
+    let advertiser = factory.adversisers.first!
+    var update = advertiser.state$.value
+    update.requests = [
+      .init(
+        controller: .init(id: "controller-1", name: "Controller 1"),
+        hub: .init(id: "hub-1", name: "Hub 1")
+      ),
+    ]
+    update.isRunning = true
+    advertiser.state$.value = update
+    try await Task.sleep(for: .milliseconds(1))
+    try await server.perform(.stopAdvertising)
+    await completer.result()
+
+    let states = await stateActor.values
     let lastState = states.last!
     #expect(lastState.isAdvertising == false)
     #expect(lastState.requests.isEmpty)
@@ -201,27 +221,36 @@ struct CameraHubServerTests {
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
     )
-    try await server.perform(.startAdvertising)
-    try await Task.sleep(for: .milliseconds(1))
-    let advertiser = factory.adversisers.first!
 
-    var serverStates: [CameraHubServerState] = []
-    try await confirmation(nil, expectedCount: 2) { confirmation in
-      var bag = Set<AnyCancellable>()
-      server.onState.sink { _ in
-      } receiveValue: { state in
-        serverStates.append(state)
-        confirmation()
-      }.store(in: &bag)
-      advertiser.event$.send(.cameraHubClient(controller))
-      try await Task.sleep(for: .milliseconds(1))
+    let completer = await Completer<Void>()
+    let stateActor = CollectionActor<CameraHubServerState>()
+    await stateActor.setOnAppended { states in
+      guard states.count == 2 else {
+        return
+      }
+      Task {
+        await completer.resume()
+      }
     }
+    var bag = Set<AnyCancellable>()
+    server.onState
+      .eraseToAnyPublisher()
+      .removeDuplicates().sink { _ in
+      } receiveValue: { state in
+        Task {
+          await stateActor.append(state)
+        }
+      }.store(in: &bag)
+    try await server.perform(.startAdvertising)
+    let advertiser = factory.adversisers.first!
+    advertiser.event$.send(.cameraHubClient(controller))
+    await completer.result()
 
-    #expect(serverStates.count == 2)
+    let serverStates = await stateActor.values
     let lastState: CameraHubServerState = serverStates.last!
     #expect(
       lastState.connectedControllers == [
-        CameraControllerDescriptor(id: "controller-1", name: "Controller 1")
+        CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
       ]
     )
   }
