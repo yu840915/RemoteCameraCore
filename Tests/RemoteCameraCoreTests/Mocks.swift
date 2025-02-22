@@ -124,3 +124,72 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
     commands.append(command)
   }
 }
+
+final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
+  var command$: PassthroughSubject<RemoteCameraCore.CaptureServiceCommand, any Error>
+  var onCommand: any Publisher<RemoteCameraCore.CaptureServiceCommand, any Error> {
+    command$
+  }
+  let actor = ClientPortActor<
+    RemoteCameraCore.CaptureServiceStateUpdateMessage,
+    RemoteCameraCore.CaptureServiceEvent
+  >()
+
+  init() {
+    command$ = PassthroughSubject()
+  }
+
+  func setOnUpdate(_ onUpdate: @Sendable @escaping ([State]) -> Void) async {
+    await actor.setOnUpdate(onUpdate)
+  }
+
+  func update(_ state: RemoteCameraCore.CaptureServiceStateUpdateMessage) async {
+    await actor.update(state)
+  }
+
+  func notify(_ event: RemoteCameraCore.CaptureServiceEvent) async {
+    await actor.notify(event)
+  }
+
+  func onError(_ error: any Error) async {
+    await actor.onError(error)
+  }
+}
+
+actor ClientPortActor<State, Event>
+where State: Sendable, Event: Sendable {
+  var updates: [State] = []
+  var onUpdate: (([State]) -> Void)?
+  var events: [Event] = []
+  var errors: [any Error] = []
+
+  func setOnUpdate(_ onUpdate: @Sendable @escaping ([State]) -> Void) {
+    self.onUpdate = onUpdate
+  }
+
+  func update(_ state: State) {
+    updates.append(state)
+    onUpdate?(updates)
+  }
+
+  func notify(_ event: Event) {
+    events.append(event)
+  }
+
+  func onError(_ error: any Error) {
+    errors.append(error)
+  }
+}
+
+actor CollectionActor<T: Sendable> {
+  var values: [T] = []
+  var onAppended: (([T]) -> Void)?
+  func append(_ value: T) {
+    values.append(value)
+    onAppended?(values)
+  }
+
+  func setOnAppended(_ handler: @Sendable @escaping ([T]) -> Void) {
+    onAppended = handler
+  }
+}

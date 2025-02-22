@@ -23,7 +23,7 @@ struct CameraHubServiceClientBindingTests {
         )
       )
     )
-    try await Task.sleep(for: .milliseconds(1))
+    try await Task.sleep(for: .milliseconds(10))
 
     #expect(hub.commands.count == 1)
     guard case let .requestCapture(args) = hub.commands.first else {
@@ -242,7 +242,6 @@ struct CameraHubServiceClientBindingTests {
         hub.event$.send(completion: .failure(MockError()))
         hub.state$.send(completion: .failure(MockError()))
       }
-
       do {
         try await sut.waitUnbound()
       } catch {

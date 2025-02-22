@@ -57,7 +57,7 @@ struct CameraHubServerTests {
     let hub = DummyCameraHub(state: state)
     let server = await CameraHubServer(localHub: hub, advertiserFactory: factory)
     try await server.perform(.startAdvertising)
-    try await Task.sleep(for: .milliseconds(1))
+    try await Task.sleep(for: .milliseconds(10))
     let advertiser = factory.adversisers.first!
 
     var serverStates: [CameraHubServerState] = []
@@ -77,7 +77,7 @@ struct CameraHubServerTests {
       ]
       update.isRunning = true
       advertiser.state$.value = update
-      try await Task.sleep(for: .milliseconds(1))
+      try await Task.sleep(for: .milliseconds(10))
     }
 
     #expect(
@@ -114,13 +114,15 @@ struct CameraHubServerTests {
     try await Task.sleep(for: .milliseconds(1))
     let advertiser = factory.adversisers.first!
 
-    var serverStates: [CameraHubServerState] = []
+    let serverStates = CollectionActor<CameraHubServerState>()
     try await confirmation(nil, expectedCount: 3) { confirmation in
       var bag = Set<AnyCancellable>()
       server.onState.sink { _ in
       } receiveValue: { state in
-        serverStates.append(state)
-        confirmation()
+        Task {
+          await serverStates.append(state)
+          confirmation()
+        }
       }.store(in: &bag)
       var update = advertiser.state$.value
       update.requests = [
@@ -131,13 +133,14 @@ struct CameraHubServerTests {
       ]
       update.isRunning = true
       advertiser.state$.value = update
-      try await Task.sleep(for: .milliseconds(1))
+      try await Task.sleep(for: .milliseconds(10))
       try await server.perform(.stopAdvertising)
-      try await Task.sleep(for: .milliseconds(1))
+      try await Task.sleep(for: .milliseconds(10))
     }
 
-    #expect(serverStates.count == 3)
-    let lastState = serverStates.last!
+    let states = await serverStates.values
+    #expect(states.count == 3)
+    let lastState = states.last!
     #expect(lastState.isAdvertising == false)
     #expect(lastState.requests.isEmpty)
     guard case .stop = advertiser.commands.last else {

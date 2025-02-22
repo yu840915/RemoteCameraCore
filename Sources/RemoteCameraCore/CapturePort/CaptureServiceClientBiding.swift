@@ -1,13 +1,14 @@
 import AsyncUtils
 import Combine
 
-public actor CameraHubServiceClientBinding {
-  public typealias Service = CameraHubServicePort
-  public typealias Client = CameraHubClientPort
+public actor CaptureServiceClientBinding {
+  public typealias Service = CaptureServicePort
+  public typealias Client = CaptureClientPort
   let service: any Service
   let client: any Client
   let completor: ThrowingCompleter<Void>
   private var isBound = true
+  private var lastState = CaptureServiceState()
   private var bag = Set<AnyCancellable>()
 
   public init(client: some Client, service: some Service) async {
@@ -61,25 +62,37 @@ public actor CameraHubServiceClientBinding {
   }
 }
 
-extension CameraHubServiceClientBinding {
+extension CaptureServiceClientBinding {
   fileprivate func updateBag(_ bag: Set<AnyCancellable>) {
     self.bag = bag
   }
 
-  fileprivate func routeCommand(_ command: CameraHubCommand) async {
-    do {
-      try await service.perform(command)
-    } catch {
-      await client.onError(error)
+  fileprivate func routeState(_ state: CaptureServiceState) async {
+    await withTaskGroup(of: Void.self) { [weak self, lastState] group in
+      group.addTask { [weak self] in
+        if state.configuration != lastState.configuration {
+          await self?.client.update(.configuration(state.configuration))
+        }
+      }
+      group.addTask { [weak self] in
+        if state.availableConfigurationCommands != lastState.availableConfigurationCommands {
+          await self?.client.update(
+            .availableConfigurationCommands(state.availableConfigurationCommands)
+          )
+        }
+      }
+      group.addTask { [weak self] in
+        if let camera = state.camera, camera != lastState.camera {
+          await self?.client.update(.cameraDescriptor(camera))
+        }
+      }
+      group.addTask { [weak self] in
+        if state.capabilities != lastState.capabilities {
+          await self?.client.update(.capabilities(state.capabilities))
+        }
+      }
     }
-  }
-
-  fileprivate func routeState(_ state: CameraHubState) async {
-    await client.update(state)
-  }
-
-  fileprivate func routeEvent(_ event: CameraHubEvent) async {
-    await client.notify(event)
+    lastState = state
   }
 
   fileprivate func handleStateChannelCompletion(
@@ -101,6 +114,29 @@ extension CameraHubServiceClientBinding {
     }
   }
 
+  fileprivate func routeCommand(_ command: CaptureServiceCommand) async {
+    do {
+      try await service.perform(command)
+    } catch {
+      await client.onError(error)
+    }
+  }
+
+  fileprivate func handleCommandChannelCompletion(
+    _ completion: Subscribers.Completion<Error>
+  ) async {
+    switch completion {
+    case .finished:
+      await unbind(BindingError.commandPublisherClosed)
+    case .failure(let error):
+      await unbind(error)
+    }
+  }
+
+  fileprivate func routeEvent(_ event: CaptureServiceEvent) async {
+    await client.notify(event)
+  }
+
   fileprivate func handleEventChannelCompletion(
     _ completion: Subscribers.Completion<Error>
   ) async {
@@ -119,16 +155,4 @@ extension CameraHubServiceClientBinding {
       await taskGroup.next()
     }
   }
-
-  fileprivate func handleCommandChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    switch completion {
-    case .finished:
-      await unbind(BindingError.commandPublisherClosed)
-    case .failure(let error):
-      await unbind(error)
-    }
-  }
-
 }

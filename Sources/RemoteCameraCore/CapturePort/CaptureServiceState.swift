@@ -7,6 +7,26 @@ public struct CaptureServiceState: Sendable, Equatable {
   public init() {}
 }
 
+extension CaptureServiceState {
+  public mutating func update(_ updates: [CaptureServiceStateUpdateMessage]) {
+    for update in updates {
+      self.update(update)
+    }
+  }
+  public mutating func update(_ update: CaptureServiceStateUpdateMessage) {
+    switch update {
+    case let .cameraDescriptor(camera):
+      self.camera = camera
+    case let .configuration(configuration):
+      self.configuration = configuration
+    case let .capabilities(capabilities):
+      self.capabilities = capabilities
+    case let .availableConfigurationCommands(commands):
+      self.availableConfigurationCommands = commands
+    }
+  }
+}
+
 public struct CameraConfiguration: Sendable, Equatable {
   public var torchMode: TorchMode?
   public var flashMode: FlashMode?
