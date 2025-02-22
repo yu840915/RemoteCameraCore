@@ -86,7 +86,7 @@ struct CameraHubServerTests {
       .init(
         controller: .init(id: "controller-1", name: "Controller 1"),
         hub: .init(id: "hub-1", name: "Hub 1")
-      ),
+      )
     ]
     update.isRunning = true
     advertiser.state$.value = update
@@ -94,7 +94,7 @@ struct CameraHubServerTests {
 
     let serverStates = await stateActor.values
     #expect(
-      serverStates[(serverStates.count - 2) ..< serverStates.count]
+      serverStates[(serverStates.count - 2)..<serverStates.count]
         == [
           .init(
             requests: [],
@@ -106,7 +106,7 @@ struct CameraHubServerTests {
               ControlRequest(
                 controller: CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
                 hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1")
-              ),
+              )
             ],
             isAdvertising: true,
             connectedControllers: []
@@ -151,7 +151,7 @@ struct CameraHubServerTests {
       .init(
         controller: .init(id: "controller-1", name: "Controller 1"),
         hub: .init(id: "hub-1", name: "Hub 1")
-      ),
+      )
     ]
     update.isRunning = true
     advertiser.state$.value = update
@@ -212,12 +212,12 @@ struct CameraHubServerTests {
   }
 
   @Test
-  func establishConnectionOnClientEvent() async throws {
+  func establishBindingOnClientEvent() async throws {
     let factory = DummyAdvertiserFactory()
-    var state = CameraHubState(id: "hub-1")
-    state.name = "Hub 1"
-    let hub = DummyCameraHub(state: state)
-    let server = await CameraHubServer(localHub: hub, advertiserFactory: factory)
+    let hub = DummyCameraHub(
+      state: CameraHubState(id: "hub-1", name: "Hub 1")
+    )
+    let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
     )
@@ -233,7 +233,7 @@ struct CameraHubServerTests {
       }
     }
     var bag = Set<AnyCancellable>()
-    server.onState
+    sut.onState
       .eraseToAnyPublisher()
       .removeDuplicates().sink { _ in
       } receiveValue: { state in
@@ -241,7 +241,7 @@ struct CameraHubServerTests {
           await stateActor.append(state)
         }
       }.store(in: &bag)
-    try await server.perform(.startAdvertising)
+    try await sut.perform(.startAdvertising)
     let advertiser = factory.adversisers.first!
     advertiser.event$.send(.cameraHubClient(controller))
     await completer.result()
@@ -250,8 +250,63 @@ struct CameraHubServerTests {
     let lastState: CameraHubServerState = serverStates.last!
     #expect(
       lastState.connectedControllers == [
-        CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
+        CameraControllerDescriptor(id: "controller-1", name: "Controller 1")
       ]
+    )
+  }
+
+  @Test
+  func handleUnbind() async throws {
+    let factory = DummyAdvertiserFactory()
+    let hub = DummyCameraHub(
+      state: CameraHubState(id: "hub-1", name: "Hub 1")
+    )
+    let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
+    let controller = DummyHubController(
+      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
+    )
+
+    let setUp = await Completer<Void>()
+    let stateActor = CollectionActor<CameraHubServerState>()
+    await stateActor.setOnAppended { states in
+      guard states.count == 2 else {
+        return
+      }
+      Task {
+        await setUp.resume()
+      }
+    }
+    var bag = Set<AnyCancellable>()
+    sut.onState
+      .eraseToAnyPublisher()
+      .removeDuplicates().sink { _ in
+      } receiveValue: { state in
+        Task {
+          await stateActor.append(state)
+        }
+      }.store(in: &bag)
+    try await sut.perform(.startAdvertising)
+    let advertiser = factory.adversisers.first!
+    advertiser.event$.send(.cameraHubClient(controller))
+    await setUp.result()
+    await stateActor.reset()
+
+    let perform = await Completer<Void>()
+    await stateActor.setOnAppended { states in
+      guard states.count == 1 else {
+        return
+      }
+      Task {
+        await perform.resume()
+      }
+    }
+    controller.command$.send(completion: .finished)
+    await perform.result()
+
+    let serverStates = await stateActor.values
+    let lastState: CameraHubServerState = serverStates.last!
+    #expect(
+      lastState.connectedControllers == []
     )
   }
 }

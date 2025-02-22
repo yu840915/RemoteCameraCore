@@ -218,4 +218,8 @@ actor CollectionActor<T: Sendable> {
   func setOnAppended(_ handler: @Sendable @escaping ([T]) -> Void) {
     onAppended = handler
   }
+
+  func reset() {
+    values = []
+  }
 }

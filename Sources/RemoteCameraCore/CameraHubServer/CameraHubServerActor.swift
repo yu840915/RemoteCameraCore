@@ -58,7 +58,7 @@ extension CameraHubServerActor {
       switch completion {
       case .finished:
         continuation.finish()
-      case .failure(let error):
+      case let .failure(error):
         continuation.finish(throwing: error)
       }
     } receiveValue: { CameraHubServerState in
@@ -73,7 +73,7 @@ extension CameraHubServerActor {
       switch completion {
       case .finished:
         continuation.finish()
-      case .failure(let error):
+      case let .failure(error):
         continuation.finish(throwing: error)
       }
     } receiveValue: { event in
@@ -92,14 +92,14 @@ extension CameraHubServerActor {
       )
     )
     var bag = Set<AnyCancellable>()
-    advertiser.onState.sink { [weak self] completion in
+    advertiser.onState.sink { [weak self] _ in
 
     } receiveValue: { [weak self] state in
       Task { [weak self] in
         await self?.onAdvertiserState(state)
       }
     }.store(in: &bag)
-    advertiser.onEvent.sink { [weak self] completion in
+    advertiser.onEvent.sink { [weak self] _ in
 
     } receiveValue: { [weak self] event in
       Task { [weak self] in
@@ -123,7 +123,22 @@ extension CameraHubServerActor {
     case let .cameraHubClient(client):
       let binding = await CameraHubServiceClientBinding(client: client, service: localHub)
       bindings.append(binding)
+      Task { [weak self] in
+        await self?.waitBinding(binding)
+      }
     }
+  }
+
+  fileprivate func waitBinding(_ binding: CameraHubServiceClientBinding) async {
+    do {
+      try await binding.waitUnbound()
+    } catch {
+    }
+    remove(binding)
+  }
+
+  fileprivate func remove(_ binding: CameraHubServiceClientBinding) {
+    bindings.removeAll { $0 === binding }
   }
 
   fileprivate func startAdvertising() async throws {
