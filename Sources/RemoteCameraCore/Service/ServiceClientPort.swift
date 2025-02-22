@@ -7,7 +7,7 @@ public protocol EventServiceClientPort: Sendable {
   func notify(_ event: Event) async
   func onError(_ error: Error) async
   var onCommand: any Publisher<Command, any Error> { get }
-  // func disconnect(_ error: Error?) async
+  func unbind(_ error: Error?) async
 }
 
 public protocol StateServiceClientPort: EventServiceClientPort {

@@ -50,10 +50,11 @@ public actor CaptureServiceClientBinding {
     try await completor.result()
   }
 
-  public func unbind(_ error: Error?) async {
+  public func unbind(_ error: Error?, localTriggered: Bool) async {
     guard isBound else { return }
     isBound = false
     bag = []
+    await client.unbind(localTriggered ? error : nil)
     if let error = error {
       await completor.resume(throwing: error)
     } else {
@@ -98,20 +99,12 @@ extension CaptureServiceClientBinding {
   fileprivate func handleStateChannelCompletion(
     _ completion: Subscribers.Completion<Error>
   ) async {
-    await withTaskGroup(of: Void.self) { [weak self] taskGroup in
-      let error =
-        switch completion {
-        case .finished: BindingError.statePublisherClosed
-        case .failure(let error): error
-        }
-      taskGroup.addTask { [weak self] in
-        await self?.client.onError(error)
+    let error =
+      switch completion {
+      case .finished: BindingError.statePublisherClosed
+      case .failure(let error): error
       }
-      taskGroup.addTask { [weak self] in
-        await self?.unbind(error)
-      }
-      await taskGroup.next()
-    }
+    await unbind(error, localTriggered: true)
   }
 
   fileprivate func routeCommand(_ command: CaptureServiceCommand) async {
@@ -127,9 +120,9 @@ extension CaptureServiceClientBinding {
   ) async {
     switch completion {
     case .finished:
-      await unbind(BindingError.commandPublisherClosed)
+      await unbind(BindingError.commandPublisherClosed, localTriggered: false)
     case .failure(let error):
-      await unbind(error)
+      await unbind(error, localTriggered: false)
     }
   }
 
@@ -140,19 +133,11 @@ extension CaptureServiceClientBinding {
   fileprivate func handleEventChannelCompletion(
     _ completion: Subscribers.Completion<Error>
   ) async {
-    await withTaskGroup(of: Void.self) { [weak self] taskGroup in
-      let error =
-        switch completion {
-        case .finished: BindingError.eventPublisherClosed
-        case .failure(let error): error
-        }
-      taskGroup.addTask { [weak self] in
-        await self?.client.onError(error)
+    let error =
+      switch completion {
+      case .finished: BindingError.eventPublisherClosed
+      case .failure(let error): error
       }
-      taskGroup.addTask { [weak self] in
-        await self?.unbind(error)
-      }
-      await taskGroup.next()
-    }
+    await unbind(error, localTriggered: true)
   }
 }

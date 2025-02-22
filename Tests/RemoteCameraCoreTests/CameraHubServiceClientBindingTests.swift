@@ -57,8 +57,9 @@ struct CameraHubServiceClientBindingTests {
     ]
     try await Task.sleep(for: .milliseconds(1))
 
-    #expect(controller.updates.count == 2)
-    guard let update = controller.updates.last else {
+    let updates = await controller.actor.updates
+    #expect(updates.count == 2)
+    guard let update = updates.last else {
       throw TestError.conditionFailed
     }
     #expect(update.id == "hub-1")
@@ -92,7 +93,9 @@ struct CameraHubServiceClientBindingTests {
       }
     }
 
-    #expect(controller.errors.count == 1)
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
     print(sut)
   }
 
@@ -115,7 +118,9 @@ struct CameraHubServiceClientBindingTests {
       }
     }
 
-    #expect(controller.errors.count == 1)
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
     print(sut)
   }
 
@@ -131,9 +136,10 @@ struct CameraHubServiceClientBindingTests {
     hub.event$.send(.capture(capture: capture))
     try await Task.sleep(for: .milliseconds(1))
 
-    #expect(controller.events.count == 1)
+    let events = await controller.actor.events
+    #expect(events.count == 1)
     guard
-      case let .capture(arg) = controller.events.first,
+      case let .capture(arg) = events.first,
       let argCapture = arg as? DummyCapture
     else {
       throw TestError.conditionFailed
@@ -162,7 +168,9 @@ struct CameraHubServiceClientBindingTests {
       }
     }
 
-    #expect(controller.errors.count == 1)
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
     print(sut)
   }
 
@@ -185,7 +193,9 @@ struct CameraHubServiceClientBindingTests {
       }
     }
 
-    #expect(controller.errors.count == 1)
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
     print(sut)
   }
 
@@ -208,6 +218,10 @@ struct CameraHubServiceClientBindingTests {
         confirmation()
       }
     }
+
+    guard case .finished = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
   }
 
   @Test
@@ -227,6 +241,9 @@ struct CameraHubServiceClientBindingTests {
       } catch {
         confirmation()
       }
+    }
+    guard case .finished = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
     }
   }
 

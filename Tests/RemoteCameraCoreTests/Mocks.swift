@@ -48,9 +48,10 @@ final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
   var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, any Error> {
     command$
   }
-  var updates: [RemoteCameraCore.CameraHubState] = []
-  var events: [RemoteCameraCore.CameraHubEvent] = []
-  var errors: [any Error] = []
+  let actor = ClientPortActor<
+    RemoteCameraCore.CameraHubState,
+    RemoteCameraCore.CameraHubEvent
+  >()
 
   init(controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor) {
     self.controllerDescriptor = controllerDescriptor
@@ -58,17 +59,21 @@ final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
   }
 
   func update(_ state: RemoteCameraCore.CameraHubState) async {
-    updates.append(state)
+    await actor.update(state)
   }
 
   func notify(_ event: RemoteCameraCore.CameraHubEvent) async {
-    events.append(event)
+    await actor.notify(event)
+
   }
 
   func onError(_ error: any Error) async {
-    errors.append(error)
+    await actor.onError(error)
   }
 
+  func unbind(_ error: (any Error)?) async {
+    await actor.unbind(error)
+  }
 }
 
 final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
@@ -154,6 +159,10 @@ final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
   func onError(_ error: any Error) async {
     await actor.onError(error)
   }
+
+  func unbind(_ error: (any Error)?) async {
+    await actor.unbind(error)
+  }
 }
 
 actor ClientPortActor<State, Event>
@@ -162,6 +171,7 @@ where State: Sendable, Event: Sendable {
   var onUpdate: (([State]) -> Void)?
   var events: [Event] = []
   var errors: [any Error] = []
+  var unbindInvocation: UnbindInvocation?
 
   func setOnUpdate(_ onUpdate: @Sendable @escaping ([State]) -> Void) {
     self.onUpdate = onUpdate
@@ -179,6 +189,22 @@ where State: Sendable, Event: Sendable {
   func onError(_ error: any Error) {
     errors.append(error)
   }
+
+  func unbind(_ error: (any Error)?) {
+    guard unbindInvocation == nil else {
+      fatalError("unbind called more than once")
+    }
+    if let error = error {
+      unbindInvocation = .error(error)
+    } else {
+      unbindInvocation = .finished
+    }
+  }
+}
+
+enum UnbindInvocation {
+  case finished
+  case error(any Error)
 }
 
 actor CollectionActor<T: Sendable> {

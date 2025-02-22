@@ -23,7 +23,7 @@ struct CaptureServiceClientBindingTests {
   }
 
   @Test
-  func terminateOnCommandChannelClose() async throws {
+  func unbindOnCommandChannelClose() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
@@ -39,10 +39,14 @@ struct CaptureServiceClientBindingTests {
         confirmation()
       }
     }
+
+    guard case .finished = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
   }
 
   @Test
-  func propagateCommandChannelError() async throws {
+  func unbindOnCommandChannelError() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
@@ -57,6 +61,10 @@ struct CaptureServiceClientBindingTests {
       } catch {
         confirmation()
       }
+    }
+
+    guard case .finished = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
     }
   }
 
@@ -94,6 +102,10 @@ struct CaptureServiceClientBindingTests {
         confirmation()
       }
     }
+
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
   }
 
   @Test
@@ -112,6 +124,10 @@ struct CaptureServiceClientBindingTests {
       } catch {
         confirmation()
       }
+    }
+
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
     }
   }
 
@@ -132,6 +148,10 @@ struct CaptureServiceClientBindingTests {
         confirmation()
       }
     }
+
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
+    }
   }
 
   @Test
@@ -150,6 +170,10 @@ struct CaptureServiceClientBindingTests {
       } catch {
         confirmation()
       }
+    }
+
+    guard case .error = await controller.actor.unbindInvocation else {
+      throw TestError.conditionFailed
     }
   }
 
