@@ -309,4 +309,71 @@ struct CameraHubServerTests {
       lastState.connectedControllers == []
     )
   }
+
+  @Test
+  func stopAdvertisingOnAdvertiserChannelError() async throws {
+    let factory = DummyAdvertiserFactory()
+    var state = CameraHubState(id: "hub-1")
+    state.name = "Hub 1"
+    let hub = DummyCameraHub(state: state)
+    let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
+
+    let setUp = await Completer<Void>()
+    let eventCompleter = await Completer<Void>()
+    let stateCompleter = await Completer<Void>()
+    let stateActor = CollectionActor<CameraHubServerState>()
+    var bag = Set<AnyCancellable>()
+    await stateActor.setOnAppended { states in
+      if states.count == 2 {
+        Task {
+          await setUp.resume()
+        }
+      } else if states.count == 3 {
+        Task {
+          await stateCompleter.resume()
+        }
+      }
+    }
+    sut.onState
+      .eraseToAnyPublisher()
+      .removeDuplicates().sink { _ in
+      } receiveValue: { state in
+        Task {
+          await stateActor.append(state)
+        }
+      }.store(in: &bag)
+    sut.onEvent.sink { _ in
+    } receiveValue: { event in
+      Task {
+        await eventCompleter.resume()
+      }
+    }.store(in: &bag)
+    try await sut.perform(.startAdvertising)
+    let advertiser = factory.adversisers.first!
+    var update = advertiser.state$.value
+    update.requests = [
+      .init(
+        controller: .init(id: "controller-1", name: "Controller 1"),
+        hub: .init(id: "hub-1", name: "Hub 1")
+      )
+    ]
+    update.isRunning = true
+    advertiser.state$.value = update
+    await setUp.result()
+
+    advertiser.event$.send(completion: .failure(MockError()))
+    await eventCompleter.result()
+    await stateCompleter.result()
+
+    let serverStates = await stateActor.values
+    let lastState: CameraHubServerState = serverStates.last!
+    #expect(
+      lastState
+        == .init(
+          requests: [],
+          isAdvertising: false,
+          connectedControllers: []
+        )
+    )
+  }
 }
