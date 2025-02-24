@@ -4,8 +4,9 @@ import Combine
 public actor CaptureServiceClientBinding {
   public typealias Service = CaptureServicePort
   public typealias Client = CaptureClientPort
-  let service: any Service
-  let client: any Client
+  public let service: any Service
+  public let client: any Client
+
   let completor: ThrowingCompleter<Void>
   private var isBound = true
   private var lastState = CaptureServiceState()

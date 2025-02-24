@@ -61,8 +61,8 @@ extension CameraHubServerActor {
       case let .failure(error):
         continuation.finish(throwing: error)
       }
-    } receiveValue: { CameraHubServerState in
-      continuation.yield(CameraHubServerState)
+    } receiveValue: {
+      continuation.yield($0)
     }.store(in: &bag)
   }
 
@@ -76,16 +76,16 @@ extension CameraHubServerActor {
       case let .failure(error):
         continuation.finish(throwing: error)
       }
-    } receiveValue: { event in
-      continuation.yield(event)
+    } receiveValue: {
+      continuation.yield($0)
     }.store(in: &bag)
   }
 
-  fileprivate func prepareAdvertiser() -> any CameraHubAdvertisingServicePort {
+  fileprivate func prepareAdvertiser() async -> any CameraHubAdvertisingServicePort {
     if let advertiser = advertiser {
       return advertiser
     }
-    let advertiser = advertiserFactory.createHubAdvertiser(
+    let advertiser = await advertiserFactory.createHubAdvertiser(
       with: .init(
         id: localHub.id,
         name: localHub.state.name
