@@ -28,16 +28,18 @@ public final class CameraHubServer: StateServicePort {
 
     let tasks = [
       Task { [weak self] in
-        guard let self = self else { return }
-        for try await state in await actor.stateSequence! {
+        guard let stateSequence = await self?.actor.stateSequence else { return }
+        for try await state in stateSequence {
           if Task.isCancelled { break }
+          guard let self else { return }
           state$.value = state
         }
       },
       Task { [weak self] in
-        guard let self = self else { return }
-        for try await event in await actor.eventSequence! {
+        guard let eventSequence = await self?.actor.eventSequence else { return }
+        for try await event in eventSequence {
           if Task.isCancelled { break }
+          guard let self else { return }
           event$.send(event)
         }
       },

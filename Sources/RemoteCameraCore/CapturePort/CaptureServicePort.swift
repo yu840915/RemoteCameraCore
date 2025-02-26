@@ -9,7 +9,7 @@ where
   var onCapturedBuffer: any Publisher<BufferWrapper, Never> { get }
 }
 
-extension CaptureServicePort {
+public struct CaptureServiceCoders {
   public typealias CommandEncoder<Data> = MessageEncodingServicePort<CaptureServiceCommand, Data>
   public typealias CommandDecoder<Data> = MessageDecodingServicePort<Data, CaptureServiceCommand>
   public typealias StateEncoder<Data> = MessageEncodingServicePort<
