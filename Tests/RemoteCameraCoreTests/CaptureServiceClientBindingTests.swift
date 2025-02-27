@@ -181,34 +181,32 @@ struct CaptureServiceClientBindingTests {
   func routeInitialState() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
-    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
     var update = CaptureServiceState()
     update.availableConfigurationCommands.lockWhiteBalanceWithGrayWorld = true
     update.camera = .init(id: "cam1", name: "front cam", position: .builtInFront)
     update.configuration.isHDRon = true
     update.capabilities.exposureModes = [.auto, .locked]
+    capture.state$.send(update)
+    #expect(capture.state == update)
+    var sut: CaptureServiceClientBinding?
     var received = CaptureServiceState()
 
     #expect(received != update)
-    await confirmation(nil, expectedCount: 4) { confirmation in
-      let completer = await Completer<Void>()
-      Task.detached { [update] in
-        capture.state$.send(update)
-      }
-      await controller.setOnUpdate { updates in
-        confirmation()
-        if updates.count == 4 {
-          Task {
-            await completer.resume()
-          }
+    let completer = await Completer<Void>()
+    await controller.setOnUpdate { updates in
+      if updates.count == 4 {
+        Task {
+          await completer.resume()
         }
       }
-      await completer.result()
     }
+    sut = await CaptureServiceClientBinding(client: controller, service: capture)
+    await completer.result()
     let updates = await controller.actor.updates
     received.update(updates)
+    print(received == update)
     #expect(received == update)
-    print(sut)
+    print(sut!)
   }
 
   @Test

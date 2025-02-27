@@ -58,7 +58,7 @@ struct CameraHubServiceClientBindingTests {
     try await Task.sleep(for: .milliseconds(1))
 
     let updates = await controller.actor.updates
-    #expect(updates.count == 2)
+    #expect(updates.count == 3)
     guard let update = updates.last else {
       throw TestError.conditionFailed
     }

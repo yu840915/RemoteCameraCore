@@ -43,6 +43,7 @@ public actor CameraHubServiceClientBinding {
       }
     }.store(in: &bag)
     updateBag(bag)
+    await routeState(service.state)
   }
 
   public func waitUnbound() async throws {
