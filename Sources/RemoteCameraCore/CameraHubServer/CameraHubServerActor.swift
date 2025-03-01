@@ -1,3 +1,4 @@
+import AsyncUtils
 import Combine
 
 actor CameraHubServerActor {
@@ -5,11 +6,19 @@ actor CameraHubServerActor {
   final let advertiserFactory: any CameraHubAdvertiserFactoryPort
   private var advertiser: (any CameraHubAdvertisingServicePort)?
   private var adversiserBag: Set<AnyCancellable> = []
-  private var bag = Set<AnyCancellable>()
-  var stateSequence: AsyncThrowingStream<CameraHubServerState, any Error>?
-  var eventSequence: AsyncThrowingStream<CameraHubServerEvent, any Error>?
-  let state$ = CurrentValueSubject<CameraHubServerState, any Error>(.init())
-  let event$ = PassthroughSubject<CameraHubServerEvent, any Error>()
+  var stateStream: AsyncThrowingStream<CameraHubServerState, any Error> {
+    stateStreamPipe.stream
+  }
+  var eventStream: AsyncThrowingStream<CameraHubServerEvent, any Error> {
+    eventStreamWriter.stream
+  }
+  var errorStream: AsyncStream<Error> {
+    errorStreamWriter.stream
+  }
+  private let eventStreamWriter = AsyncThrowingStreamWriter<CameraHubServerEvent>()
+  private let errorStreamWriter = AsyncStreamWriter<Error>()
+  private let stateStreamPipe: SubjectToAsyncThrowingStreamPipe<CameraHubServerState, any Error>
+  private let state$ = CurrentValueSubject<CameraHubServerState, any Error>(.init())
   private var bindings: [CameraHubServiceClientBinding] = [] {
     didSet {
       var update = state$.value
@@ -24,7 +33,7 @@ actor CameraHubServerActor {
   ) async {
     self.localHub = localHub
     self.advertiserFactory = advertiserFactory
-    setUpStream()
+    stateStreamPipe = SubjectToAsyncThrowingStreamPipe(state$)
   }
 
   func perform(_ command: CameraHubServerCommand) async throws {
@@ -42,45 +51,6 @@ actor CameraHubServerActor {
 }
 
 extension CameraHubServerActor {
-  fileprivate func setUpStream() {
-    stateSequence = AsyncThrowingStream { [weak self] continuation in
-      Task { [weak self] in await self?.listenToState(with: continuation) }
-    }
-    eventSequence = AsyncThrowingStream { [weak self] continuation in
-      Task { [weak self] in await self?.listenToEvent(with: continuation) }
-    }
-  }
-
-  fileprivate func listenToState(
-    with continuation: AsyncThrowingStream<CameraHubServerState, any Error>.Continuation
-  ) {
-    state$.sink { completion in
-      switch completion {
-      case .finished:
-        continuation.finish()
-      case let .failure(error):
-        continuation.finish(throwing: error)
-      }
-    } receiveValue: {
-      continuation.yield($0)
-    }.store(in: &bag)
-  }
-
-  fileprivate func listenToEvent(
-    with continuation: AsyncThrowingStream<CameraHubServerEvent, any Error>.Continuation
-  ) {
-    event$.sink { completion in
-      switch completion {
-      case .finished:
-        continuation.finish()
-      case let .failure(error):
-        continuation.finish(throwing: error)
-      }
-    } receiveValue: {
-      continuation.yield($0)
-    }.store(in: &bag)
-  }
-
   fileprivate func prepareAdvertiser() async -> any CameraHubAdvertisingServicePort {
     if let advertiser = advertiser {
       return advertiser
@@ -136,9 +106,9 @@ extension CameraHubServerActor {
   fileprivate func onAdvertiserChannelCompletion(_ completion: Subscribers.Completion<any Error>) {
     switch completion {
     case let .failure(error):
-      event$.send(.advertiserStopped(error))
+      eventStreamWriter.send(.advertiserStopped(error))
     case .finished:
-      event$.send(.advertiserStopped(nil))
+      eventStreamWriter.send(.advertiserStopped(nil))
     }
     removeAdvertiser()
   }
@@ -147,6 +117,7 @@ extension CameraHubServerActor {
     do {
       try await binding.waitUnbound()
     } catch {
+      errorStreamWriter.send(error)
     }
     remove(binding)
   }

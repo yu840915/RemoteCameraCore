@@ -29,8 +29,8 @@ public struct ValueRange<Bound: Comparable & Sendable>: Sendable {
 }
 
 extension ValueRange {
-  public enum ValidationError: Error {
-    case outOfRange
+  public enum ValidationError: Int, Error {
+    case outOfRange = 1
   }
 }
 

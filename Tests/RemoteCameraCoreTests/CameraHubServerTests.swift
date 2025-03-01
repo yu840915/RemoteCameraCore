@@ -123,27 +123,18 @@ struct CameraHubServerTests {
     let hub = DummyCameraHub(state: state)
     let server = await CameraHubServer(localHub: hub, advertiserFactory: factory)
     let stateActor = CollectionActor<CameraHubServerState>()
-    let completer = await Completer<Void>()
+    let setUp = await Completer<Void>()
     await stateActor.setOnAppended { states in
-      guard
-        states.count == 3,
-        let last = states.last,
-        !last.isAdvertising
-      else {
+      guard let last = states.last, last.isAdvertising else {
         return
       }
-      Task {
-        await completer.resume()
-      }
+      Task { await setUp.resume() }
     }
-
     try await server.perform(.startAdvertising)
     var bag = Set<AnyCancellable>()
     server.onState.sink { _ in
     } receiveValue: { state in
-      Task {
-        await stateActor.append(state)
-      }
+      Task { await stateActor.append(state) }
     }.store(in: &bag)
     let advertiser = factory.adversisers.first!
     var update = advertiser.state$.value
@@ -155,7 +146,15 @@ struct CameraHubServerTests {
     ]
     update.isRunning = true
     advertiser.state$.value = update
-    try await Task.sleep(for: .milliseconds(1))
+    await setUp.result()
+
+    let completer = await Completer<Void>()
+    await stateActor.setOnAppended { states in
+      guard let last = states.last, !last.isAdvertising else {
+        return
+      }
+      Task { await completer.resume() }
+    }
     try await server.perform(.stopAdvertising)
     await completer.result()
 

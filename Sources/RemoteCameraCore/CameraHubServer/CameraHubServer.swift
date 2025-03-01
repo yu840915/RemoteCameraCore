@@ -1,48 +1,43 @@
+import AsyncUtils
 import Combine
 
 public final class CameraHubServer: StateServicePort {
   public typealias Event = CameraHubServerEvent
   public typealias Command = CameraHubServerCommand
   private let actor: CameraHubServerActor
-  nonisolated(unsafe) let state$ = CurrentValueSubject<CameraHubServerState, any Error>(.init())
+  nonisolated(unsafe) let state$: CurrentValueSubject<CameraHubServerState, any Error> =
+    CurrentValueSubject<CameraHubServerState, any Error>(.init())
   nonisolated(unsafe) let event$ = PassthroughSubject<CameraHubServerEvent, any Error>()
-  nonisolated(unsafe) var tasks: [Task<Void, any Error>] = []
+  nonisolated(unsafe) let error$ = PassthroughSubject<Error, Never>()
+  private nonisolated(unsafe) var pipes: [Pipe] = []
   public var state: CameraHubServerState { state$.value }
   public var onState: any Publisher<CameraHubServerState, any Error> { state$ }
   public var onEvent: any Publisher<CameraHubServerEvent, any Error> { event$ }
+  public var onError: any Publisher<Error, Never> { error$ }
 
   public init(
     localHub: some CameraHubServicePort,
     advertiserFactory: some CameraHubAdvertiserFactoryPort
   ) async {
-    actor = await .init(
+    let actor = await CameraHubServerActor(
       localHub: localHub,
       advertiserFactory: advertiserFactory
     )
-
-    let tasks = [
-      Task { [weak self] in
-        guard let stateSequence = await self?.actor.stateSequence else { return }
-        for try await state in stateSequence {
-          if Task.isCancelled { break }
-          guard let self else { return }
-          state$.value = state
-        }
-      },
-      Task { [weak self] in
-        guard let eventSequence = await self?.actor.eventSequence else { return }
-        for try await event in eventSequence {
-          if Task.isCancelled { break }
-          guard let self else { return }
-          event$.send(event)
-        }
-      },
-    ]
-    self.tasks = tasks
-  }
-
-  deinit {
-    tasks.forEach { $0.cancel() }
+    self.actor = actor
+    pipes = await withTaskGroup(of: Pipe.self) { taskGroup in
+      taskGroup.addTask {
+        AsyncThrowingStreamToSubjectPipe(stream: await actor.stateStream, subject: self.state$)
+      }
+      taskGroup.addTask {
+        AsyncThrowingStreamToSubjectPipe(stream: await actor.eventStream, subject: self.event$)
+      }
+      taskGroup.addTask {
+        AsyncStreamToSubjectPipe(stream: await actor.errorStream, subject: self.error$)
+      }
+      return await taskGroup.reduce(into: [Pipe]()) { pipes, pipe in
+        pipes.append(pipe)
+      }
+    }
   }
 
   public func perform(_ command: CameraHubServerCommand) async throws {

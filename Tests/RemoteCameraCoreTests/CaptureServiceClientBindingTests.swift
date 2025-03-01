@@ -204,7 +204,6 @@ struct CaptureServiceClientBindingTests {
     await completer.result()
     let updates = await controller.actor.updates
     received.update(updates)
-    print(received == update)
     #expect(received == update)
     print(sut!)
   }

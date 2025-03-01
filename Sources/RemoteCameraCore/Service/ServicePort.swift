@@ -5,6 +5,7 @@ public protocol EventServicePort: Sendable {
   associatedtype Command: Sendable
 
   var onEvent: any Publisher<Event, Error> { get }
+  var onError: any Publisher<Error, Never> { get }
   func perform(_ command: Command) async throws
 }
 

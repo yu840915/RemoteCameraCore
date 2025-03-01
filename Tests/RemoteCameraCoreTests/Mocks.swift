@@ -19,6 +19,7 @@ final class DummyAdvertiserFactory: CameraHubAdvertiserFactoryPort, @unchecked S
 final class DummyAdvertiser: CameraHubAdvertisingServicePort, @unchecked Sendable {
   var state$: CurrentValueSubject<RemoteCameraCore.CameraHubAdvertisingServiceState, any Error>
   var event$: PassthroughSubject<RemoteCameraCore.CameraHubAdvertisingServiceEvent, any Error>
+  var error$: PassthroughSubject<Error, Never>
   var state: RemoteCameraCore.CameraHubAdvertisingServiceState {
     state$.value
   }
@@ -28,12 +29,16 @@ final class DummyAdvertiser: CameraHubAdvertisingServicePort, @unchecked Sendabl
   var onEvent: any Publisher<RemoteCameraCore.CameraHubAdvertisingServiceEvent, any Error> {
     event$
   }
+  var onError: any Publisher<Error, Never> {
+    error$
+  }
   var commands: [RemoteCameraCore.CameraHubAdvertisingServiceCommand] = []
   let hub: RemoteCameraCore.CameraHubDescriptor
   init(hub: RemoteCameraCore.CameraHubDescriptor) {
     self.hub = hub
     state$ = CurrentValueSubject(.init())
     event$ = PassthroughSubject()
+    error$ = PassthroughSubject()
   }
 
   func perform(_ command: RemoteCameraCore.CameraHubAdvertisingServiceCommand) async throws {
@@ -80,6 +85,7 @@ final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
   var id: String
   var state$: CurrentValueSubject<RemoteCameraCore.CameraHubState, any Error>
   var event$: PassthroughSubject<RemoteCameraCore.CameraHubEvent, any Error>
+  var error$: PassthroughSubject<Error, Never>
   var state: RemoteCameraCore.CameraHubState {
     state$.value
   }
@@ -89,12 +95,16 @@ final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
   var onEvent: any Publisher<RemoteCameraCore.CameraHubEvent, any Error> {
     event$
   }
+  var onError: any Publisher<Error, Never> {
+    error$
+  }
   var commands: [RemoteCameraCore.CameraHubCommand] = []
 
   init(state: RemoteCameraCore.CameraHubState) {
     id = state.id
     state$ = CurrentValueSubject(state)
     event$ = PassthroughSubject()
+    error$ = PassthroughSubject()
   }
 
   func perform(_ command: RemoteCameraCore.CameraHubCommand) async throws {
@@ -109,6 +119,7 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
 
   var state$: CurrentValueSubject<CaptureServiceState, any Error>
   var event$: PassthroughSubject<CaptureServiceEvent, any Error>
+  var error$: PassthroughSubject<Error, Never>
   var state: CaptureServiceState {
     state$.value
   }
@@ -118,11 +129,15 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
   var onEvent: any Publisher<CaptureServiceEvent, any Error> {
     event$
   }
+  var onError: any Publisher<any Error, Never> {
+    error$
+  }
   var commands: [CaptureServiceCommand] = []
 
   init(state: CaptureServiceState = .init()) {
     state$ = CurrentValueSubject(state)
     event$ = PassthroughSubject()
+    error$ = PassthroughSubject()
   }
 
   func perform(_ command: CaptureServiceCommand) async throws {

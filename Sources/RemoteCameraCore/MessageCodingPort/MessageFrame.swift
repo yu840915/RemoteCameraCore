@@ -8,6 +8,7 @@ public struct MessageFrame: Sendable {
     case stateUpdate
     case event
     case command
+    case error
   }
 
   public let channelID: MessageChannelID
