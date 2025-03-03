@@ -10,8 +10,8 @@ public struct ErrorMessage: Error, Equatable {
   }
 }
 
-protocol ErrorMessageConvertible: Error {
-  var toErrorMessage: ErrorMessage { get }
+public protocol ErrorMessageConvertible: Error {
+  var errorMessage: ErrorMessage { get }
 }
 
 public struct ErrorMessageCoders {

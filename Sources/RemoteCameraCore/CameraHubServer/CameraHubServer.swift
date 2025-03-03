@@ -9,7 +9,7 @@ public final class CameraHubServer: StateServicePort {
     CurrentValueSubject<CameraHubServerState, any Error>(.init())
   nonisolated(unsafe) let event$ = PassthroughSubject<CameraHubServerEvent, any Error>()
   nonisolated(unsafe) let error$ = PassthroughSubject<Error, Never>()
-  private nonisolated(unsafe) var pipes: [Pipe] = []
+  private nonisolated(unsafe) var pipes: [StreamPipe] = []
   public var state: CameraHubServerState { state$.value }
   public var onState: any Publisher<CameraHubServerState, any Error> { state$ }
   public var onEvent: any Publisher<CameraHubServerEvent, any Error> { event$ }
@@ -24,7 +24,7 @@ public final class CameraHubServer: StateServicePort {
       advertiserFactory: advertiserFactory
     )
     self.actor = actor
-    pipes = await withTaskGroup(of: Pipe.self) { taskGroup in
+    pipes = await withTaskGroup(of: StreamPipe.self) { taskGroup in
       taskGroup.addTask {
         AsyncThrowingStreamToSubjectPipe(stream: await actor.stateStream, subject: self.state$)
       }
@@ -34,7 +34,7 @@ public final class CameraHubServer: StateServicePort {
       taskGroup.addTask {
         AsyncStreamToSubjectPipe(stream: await actor.errorStream, subject: self.error$)
       }
-      return await taskGroup.reduce(into: [Pipe]()) { pipes, pipe in
+      return await taskGroup.reduce(into: [StreamPipe]()) { pipes, pipe in
         pipes.append(pipe)
       }
     }

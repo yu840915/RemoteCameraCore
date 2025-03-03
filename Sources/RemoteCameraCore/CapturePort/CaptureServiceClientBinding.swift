@@ -113,7 +113,7 @@ extension CaptureServiceClientBinding {
     do {
       try await service.perform(command)
     } catch {
-      await client.onError(error)
+      await client.report(error)
     }
   }
 

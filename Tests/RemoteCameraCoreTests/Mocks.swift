@@ -50,8 +50,12 @@ final class DummyAdvertiser: CameraHubAdvertisingServicePort, @unchecked Sendabl
 final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
   var controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor
   var command$: PassthroughSubject<RemoteCameraCore.CameraHubCommand, any Error>
+  var error$: PassthroughSubject<Error, Never>
   var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, any Error> {
     command$
+  }
+  var onError: any Publisher<Error, Never> {
+    error$
   }
   let actor = ClientPortActor<
     RemoteCameraCore.CameraHubState,
@@ -61,6 +65,7 @@ final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
   init(controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor) {
     self.controllerDescriptor = controllerDescriptor
     command$ = PassthroughSubject()
+    error$ = PassthroughSubject()
   }
 
   func update(_ state: RemoteCameraCore.CameraHubState) async {
@@ -72,7 +77,7 @@ final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
 
   }
 
-  func onError(_ error: any Error) async {
+  func report(_ error: any Error) async {
     await actor.onError(error)
   }
 
@@ -147,8 +152,12 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
 
 final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
   var command$: PassthroughSubject<RemoteCameraCore.CaptureServiceCommand, any Error>
+  var error$: PassthroughSubject<Error, Never>
   var onCommand: any Publisher<RemoteCameraCore.CaptureServiceCommand, any Error> {
     command$
+  }
+  var onError: any Publisher<Error, Never> {
+    error$
   }
   let actor = ClientPortActor<
     RemoteCameraCore.CaptureServiceStateUpdateMessage,
@@ -157,6 +166,7 @@ final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
 
   init() {
     command$ = PassthroughSubject()
+    error$ = PassthroughSubject()
   }
 
   func setOnUpdate(_ onUpdate: @Sendable @escaping ([State]) -> Void) async {
@@ -171,7 +181,7 @@ final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
     await actor.notify(event)
   }
 
-  func onError(_ error: any Error) async {
+  func report(_ error: any Error) async {
     await actor.onError(error)
   }
 
