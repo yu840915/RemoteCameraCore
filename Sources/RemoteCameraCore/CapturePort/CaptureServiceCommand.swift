@@ -8,6 +8,8 @@ public enum CaptureServiceCommand: Sendable {
 
 extension CaptureServiceCommand {
   public enum ConfigurationCommand: Sendable {
+    case setLivePhoto(on: Bool)
+
     case setTorchMode(mode: TorchMode)
     case setFlashMode(mode: FlashMode)
     case setZoomFactor(factor: Double)
@@ -30,6 +32,7 @@ extension CaptureServiceCommand {
     case lockWhiteBalanceWithGrayWorld
 
     public struct FeatureTable: CommandAvailabilityChecking {
+      public var setLivePhoto = false
       public var setTorchMode = false
       public var setFlashMode = false
       public var setZoomFactor = false
@@ -49,21 +52,22 @@ extension CaptureServiceCommand {
 
       func canPerform(_ command: ConfigurationCommand) -> Bool {
         switch command {
-        case .setTorchMode(_): return setTorchMode
-        case .setFlashMode(_): return setFlashMode
-        case .setZoomFactor(_): return setZoomFactor
-        case .smoothZoom(_): return smoothZoom
-        case .setHDR(_): return setHDR
-        case .setFocusMode(_): return setFocusMode
-        case .setLensPosition(_): return setLensPosition
-        case .setFocusPointOfInterest(_): return setFocusPointOfInterest
-        case .setExposureMode(_): return setExposureMode
-        case .setExposurePointOfInterest(_): return setExposurePointOfInterest
-        case .setExposureDuration(_): return setExposureDuration
-        case .setISO(_): return setISO
-        case .setWhiteBalanceMode(_): return setWhiteBalanceMode
-        case .setTemperatureAndTint(_): return setTemperatureAndTint
-        case .setWhiteBalanceGains(_): return setWhiteBalanceGains
+        case .setLivePhoto: return setLivePhoto
+        case .setTorchMode: return setTorchMode
+        case .setFlashMode: return setFlashMode
+        case .setZoomFactor: return setZoomFactor
+        case .smoothZoom: return smoothZoom
+        case .setHDR: return setHDR
+        case .setFocusMode: return setFocusMode
+        case .setLensPosition: return setLensPosition
+        case .setFocusPointOfInterest: return setFocusPointOfInterest
+        case .setExposureMode: return setExposureMode
+        case .setExposurePointOfInterest: return setExposurePointOfInterest
+        case .setExposureDuration: return setExposureDuration
+        case .setISO: return setISO
+        case .setWhiteBalanceMode: return setWhiteBalanceMode
+        case .setTemperatureAndTint: return setTemperatureAndTint
+        case .setWhiteBalanceGains: return setWhiteBalanceGains
         case .lockWhiteBalanceWithGrayWorld: return lockWhiteBalanceWithGrayWorld
         }
       }
@@ -71,5 +75,4 @@ extension CaptureServiceCommand {
       public init() {}
     }
   }
-
 }

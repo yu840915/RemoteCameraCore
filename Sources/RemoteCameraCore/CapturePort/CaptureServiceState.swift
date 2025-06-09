@@ -13,6 +13,7 @@ extension CaptureServiceState {
       self.update(update)
     }
   }
+
   public mutating func update(_ update: CaptureServiceStateUpdateMessage) {
     switch update {
     case let .cameraDescriptor(camera):
@@ -22,12 +23,14 @@ extension CaptureServiceState {
     case let .capabilities(capabilities):
       self.capabilities = capabilities
     case let .availableConfigurationCommands(commands):
-      self.availableConfigurationCommands = commands
+      availableConfigurationCommands = commands
     }
   }
 }
 
 public struct CameraConfiguration: Sendable, Equatable {
+  public var isLivePhotoOn: Bool?
+
   public var torchMode: TorchMode?
   public var flashMode: FlashMode?
   public var zoomFactor: Double?
