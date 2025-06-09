@@ -76,3 +76,71 @@ extension CaptureServiceCommand {
     }
   }
 }
+
+extension CaptureServiceCommand.ConfigurationCommand.FeatureTable {
+  public mutating func enableAll() {
+    setLivePhoto = true
+    setTorchMode = true
+    setFlashMode = true
+    setZoomFactor = true
+    smoothZoom = true
+    setHDR = true
+    setFocusMode = true
+    setLensPosition = true
+    setFocusPointOfInterest = true
+    setExposureMode = true
+    setExposurePointOfInterest = true
+    setExposureDuration = true
+    setISO = true
+    setWhiteBalanceMode = true
+    setTemperatureAndTint = true
+    setWhiteBalanceGains = true
+    lockWhiteBalanceWithGrayWorld = true
+  }
+
+  public mutating func disableFeature(on capabilities: CameraCapabilities) {
+    if capabilities.focusModes.isEmpty {
+      setFocusMode = false
+    }
+    if capabilities.torchModes.isEmpty {
+      setTorchMode = false
+    }
+    if capabilities.flashModes.isEmpty {
+      setFlashMode = false
+    }
+    if capabilities.zoomFactorRange == nil {
+      setZoomFactor = false
+      smoothZoom = false
+    }
+    if capabilities.exposureModes.isEmpty {
+      setExposureMode = false
+    }
+    if capabilities.lensPositionRange == nil {
+      setLensPosition = false
+    }
+    if capabilities.exposureDurationRange == nil {
+      setExposureDuration = false
+    }
+    if capabilities.isoRange == nil {
+      setISO = false
+    }
+    if capabilities.whiteBalanceModes.isEmpty {
+      setWhiteBalanceMode = false
+      lockWhiteBalanceWithGrayWorld = false
+    } else if !capabilities.whiteBalanceModes.contains(.locked) {
+      lockWhiteBalanceWithGrayWorld = false
+    }
+
+    if capabilities.whiteBalanceTemperatureRange == nil
+      && capabilities.whiteBalanceTintRange == nil
+    {
+      setTemperatureAndTint = false
+    }
+    if capabilities.whiteBalanceRedGainsRange == nil
+      && capabilities.whiteBalanceGreenGainsRange == nil
+      && capabilities.whiteBalanceBlueGainsRange == nil
+    {
+      setWhiteBalanceGains = false
+    }
+  }
+}
