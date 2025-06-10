@@ -114,7 +114,7 @@ struct name {
     var sut = CaptureServiceCommand.ConfigurationCommand.FeatureTable()
     sut.enableAll()
 
-    sut.disableFeature(on: CameraCapabilities())
+    sut.disableFeature(accordingTo: CameraCapabilities())
 
     #expect(sut.setLivePhoto)
     #expect(!sut.setTorchMode)
@@ -132,6 +132,53 @@ struct name {
     #expect(!sut.setWhiteBalanceMode)
     #expect(!sut.setTemperatureAndTint)
     #expect(!sut.setWhiteBalanceGains)
+    #expect(!sut.lockWhiteBalanceWithGrayWorld)
+  }
+
+  @Test
+  func allowFeaturesAccordingToCapability() async throws {
+    var sut = CaptureServiceCommand.ConfigurationCommand.FeatureTable()
+    sut.enableAll()
+    var capabilities = CameraCapabilities()
+    capabilities.torchModes = [.on, .off]
+    capabilities.flashModes = [.on, .off]
+    capabilities.zoomFactorRange = ValueRange(min: 1, max: 5)
+    capabilities.lensPositionRange = ValueRange(min: 0, max: 1)
+    capabilities.focusModes = [.locked, .auto]
+    capabilities.exposureModes = [.locked, .auto]
+    capabilities.whiteBalanceModes = [.locked, .auto]
+
+    sut.disableFeature(accordingTo: capabilities)
+
+    #expect(sut.setLivePhoto)
+    #expect(sut.setTorchMode)
+    #expect(sut.setFlashMode)
+    #expect(sut.setZoomFactor)
+    #expect(sut.smoothZoom)
+    #expect(sut.setHDR)
+    #expect(sut.setFocusMode)
+    #expect(sut.setLensPosition)
+    #expect(sut.setFocusPointOfInterest)
+    #expect(sut.setExposureMode)
+    #expect(sut.setExposurePointOfInterest)
+    #expect(!sut.setExposureDuration)
+    #expect(!sut.setISO)
+    #expect(sut.setWhiteBalanceMode)
+    #expect(!sut.setTemperatureAndTint)
+    #expect(!sut.setWhiteBalanceGains)
+    #expect(sut.lockWhiteBalanceWithGrayWorld)
+  }
+
+  @Test
+  func disableWhiteBalanceGrayWorldLockIfNoLockMode() async throws {
+    var sut = CaptureServiceCommand.ConfigurationCommand.FeatureTable()
+    sut.enableAll()
+    var capabilities = CameraCapabilities()
+    capabilities.whiteBalanceModes = [.auto]
+
+    sut.disableFeature(accordingTo: capabilities)
+
+    #expect(sut.setWhiteBalanceMode)
     #expect(!sut.lockWhiteBalanceWithGrayWorld)
   }
 }

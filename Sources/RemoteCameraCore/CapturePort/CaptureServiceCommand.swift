@@ -98,7 +98,7 @@ extension CaptureServiceCommand.ConfigurationCommand.FeatureTable {
     lockWhiteBalanceWithGrayWorld = true
   }
 
-  public mutating func disableFeature(on capabilities: CameraCapabilities) {
+  public mutating func disableFeature(accordingTo capabilities: CameraCapabilities) {
     if capabilities.focusModes.isEmpty {
       setFocusMode = false
     }
