@@ -7,3 +7,9 @@ public struct CameraHubDescriptor: Sendable, Equatable {
     self.name = name
   }
 }
+
+extension CameraHubDescriptor: CustomStringConvertible {
+  public var description: String {
+    "CameraHubDescriptor(ID: \(id), name: \(name))"
+  }
+}
