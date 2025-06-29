@@ -5,6 +5,13 @@ public struct CaptureServiceState: Sendable, Equatable {
   public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
     .FeatureTable()
   public init() {}
+
+  public func canPerform(
+    _ command: CaptureServiceCommand.ConfigurationCommand
+  ) -> Bool {
+    //TODO: add range check
+    availableConfigurationCommands.canPerform(command)
+  }
 }
 
 extension CaptureServiceState {

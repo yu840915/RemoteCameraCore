@@ -47,4 +47,11 @@ struct ValueRangeTests {
     #expect(range1 == range2)
     #expect(range1 != range3)
   }
+
+  @Test(nil, arguments: [(0, 0.0), (50, 0.0), (100, 0.5), (150, 1.0), (200, 1.0)])
+  func proportionalValue(value: Int, expected: Double) async throws {
+    let range = ValueRange(min: 50, max: 150)
+
+    #expect(range.proportionalValue(for: value) == expected)
+  }
 }

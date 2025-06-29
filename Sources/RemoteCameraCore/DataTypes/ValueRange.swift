@@ -28,6 +28,20 @@ public struct ValueRange<Bound: Comparable & Sendable>: Sendable {
   }
 }
 
+extension ValueRange where Bound: SignedInteger {
+  public func proportionalValue(for value: Bound) -> Double {
+    let value = clamp(value)
+    return Double(value - min) / Double(max - min)
+  }
+}
+
+extension ValueRange where Bound == Double {
+  public func proportionalValue(for value: Bound) -> Double {
+    let value = clamp(value)
+    return (value - min) / (max - min)
+  }
+}
+
 extension ValueRange {
   public enum ValidationError: Int, Error {
     case outOfRange = 1
