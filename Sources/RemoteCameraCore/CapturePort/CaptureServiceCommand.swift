@@ -31,7 +31,7 @@ extension CaptureServiceCommand {
     case setWhiteBalanceGains(gains: WhiteBalanceGains)
     case lockWhiteBalanceWithGrayWorld
 
-    public struct FeatureTable: CommandAvailabilityChecking {
+    public struct FeatureTable: Sendable, Equatable {
       public var setLivePhoto = false
       public var setTorchMode = false
       public var setFlashMode = false
@@ -49,28 +49,6 @@ extension CaptureServiceCommand {
       public var setTemperatureAndTint = false
       public var setWhiteBalanceGains = false
       public var lockWhiteBalanceWithGrayWorld = false
-
-      func canPerform(_ command: ConfigurationCommand) -> Bool {
-        switch command {
-        case .setLivePhoto: return setLivePhoto
-        case .setTorchMode: return setTorchMode
-        case .setFlashMode: return setFlashMode
-        case .setZoomFactor: return setZoomFactor
-        case .smoothZoom: return smoothZoom
-        case .setHDR: return setHDR
-        case .setFocusMode: return setFocusMode
-        case .setLensPosition: return setLensPosition
-        case .setFocusPointOfInterest: return setFocusPointOfInterest
-        case .setExposureMode: return setExposureMode
-        case .setExposurePointOfInterest: return setExposurePointOfInterest
-        case .setExposureDuration: return setExposureDuration
-        case .setISO: return setISO
-        case .setWhiteBalanceMode: return setWhiteBalanceMode
-        case .setTemperatureAndTint: return setTemperatureAndTint
-        case .setWhiteBalanceGains: return setWhiteBalanceGains
-        case .lockWhiteBalanceWithGrayWorld: return lockWhiteBalanceWithGrayWorld
-        }
-      }
 
       public init() {}
     }
@@ -96,51 +74,5 @@ extension CaptureServiceCommand.ConfigurationCommand.FeatureTable {
     setTemperatureAndTint = true
     setWhiteBalanceGains = true
     lockWhiteBalanceWithGrayWorld = true
-  }
-
-  public mutating func disableFeature(accordingTo capabilities: CameraCapabilities) {
-    if capabilities.focusModes.isEmpty {
-      setFocusMode = false
-    }
-    if capabilities.torchModes.isEmpty {
-      setTorchMode = false
-    }
-    if capabilities.flashModes.isEmpty {
-      setFlashMode = false
-    }
-    if capabilities.zoomFactorRange == nil {
-      setZoomFactor = false
-      smoothZoom = false
-    }
-    if capabilities.exposureModes.isEmpty {
-      setExposureMode = false
-    }
-    if capabilities.lensPositionRange == nil {
-      setLensPosition = false
-    }
-    if capabilities.exposureDurationRange == nil {
-      setExposureDuration = false
-    }
-    if capabilities.isoRange == nil {
-      setISO = false
-    }
-    if capabilities.whiteBalanceModes.isEmpty {
-      setWhiteBalanceMode = false
-      lockWhiteBalanceWithGrayWorld = false
-    } else if !capabilities.whiteBalanceModes.contains(.locked) {
-      lockWhiteBalanceWithGrayWorld = false
-    }
-
-    if capabilities.whiteBalanceTemperatureRange == nil
-      && capabilities.whiteBalanceTintRange == nil
-    {
-      setTemperatureAndTint = false
-    }
-    if capabilities.whiteBalanceRedGainsRange == nil
-      && capabilities.whiteBalanceGreenGainsRange == nil
-      && capabilities.whiteBalanceBlueGainsRange == nil
-    {
-      setWhiteBalanceGains = false
-    }
   }
 }

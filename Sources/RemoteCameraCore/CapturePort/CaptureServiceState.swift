@@ -6,11 +6,60 @@ public struct CaptureServiceState: Sendable, Equatable {
     .FeatureTable()
   public init() {}
 
+}
+extension CaptureServiceState: CommandAvailabilityChecking {
   public func canPerform(
     _ command: CaptureServiceCommand.ConfigurationCommand
   ) -> Bool {
-    //TODO: add range check
-    availableConfigurationCommands.canPerform(command)
+    switch command {
+    case .setLivePhoto: availableConfigurationCommands.setLivePhoto
+    case let .setTorchMode(arg):
+      availableConfigurationCommands.setTorchMode
+        && capabilities.torchModes.contains(
+          arg
+        )
+    case let .setFlashMode(arg):
+      availableConfigurationCommands.setFlashMode
+        && capabilities.flashModes.contains(
+          arg
+        )
+    case let .setZoomFactor(arg):
+      availableConfigurationCommands.setZoomFactor
+        && capabilities.zoomFactorRange?.contains(arg) ?? false
+    case .smoothZoom: availableConfigurationCommands.smoothZoom
+    case .setHDR: availableConfigurationCommands.setHDR
+    case let .setFocusMode(arg):
+      availableConfigurationCommands.setFocusMode && capabilities.focusModes.contains(arg)
+    case let .setLensPosition(arg):
+      availableConfigurationCommands.setLensPosition
+        && capabilities.lensPositionRange?.contains(arg) ?? false
+    case .setFocusPointOfInterest: availableConfigurationCommands.setFocusPointOfInterest
+    case let .setExposureMode(arg):
+      availableConfigurationCommands.setExposureMode && capabilities.exposureModes.contains(arg)
+    case .setExposurePointOfInterest: availableConfigurationCommands.setExposurePointOfInterest
+    case let .setExposureDuration(arg):
+      availableConfigurationCommands.setExposureDuration
+        && capabilities.exposureDurationRange?.contains(arg) ?? false
+    case let .setISO(arf):
+      availableConfigurationCommands.setISO
+        && capabilities.isoRange?.contains(arf) ?? false
+    case let .setWhiteBalanceMode(arg):
+      availableConfigurationCommands.setWhiteBalanceMode
+        && capabilities.whiteBalanceModes.contains(arg)
+    case let .setTemperatureAndTint(arg):
+      availableConfigurationCommands.setTemperatureAndTint
+        && capabilities.whiteBalanceModes.contains(.locked)
+        && capabilities.whiteBalanceTemperatureRange?.contains(arg.temperature) ?? false
+        && capabilities.whiteBalanceTintRange?.contains(arg.tint) ?? false
+    case let .setWhiteBalanceGains(arg):
+      availableConfigurationCommands.setWhiteBalanceGains
+        && capabilities.whiteBalanceRedGainsRange?.contains(arg.redGain) ?? false
+        && capabilities.whiteBalanceGreenGainsRange?.contains(arg.greenGain) ?? false
+        && capabilities.whiteBalanceBlueGainsRange?.contains(arg.blueGain) ?? false
+    case .lockWhiteBalanceWithGrayWorld:
+      availableConfigurationCommands.lockWhiteBalanceWithGrayWorld
+        && capabilities.whiteBalanceModes.contains(.locked)
+    }
   }
 }
 
