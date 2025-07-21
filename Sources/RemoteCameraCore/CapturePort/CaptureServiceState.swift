@@ -136,3 +136,102 @@ public enum CaptureServiceStateUpdateMessage: Sendable {
   case capabilities(CameraCapabilities)
   case availableConfigurationCommands(CaptureServiceCommand.ConfigurationCommand.FeatureTable)
 }
+
+extension CaptureServiceState: CustomStringConvertible {
+  public var description: String {
+    "CaptureServiceState(camera: \(camera.description), configuration: \(configuration.description), capabilities: \(capabilities.description), availableConfigurationCommands: \(availableConfigurationCommands.description))"
+  }
+}
+
+extension CameraConfiguration: CustomStringConvertible {
+  public var description: String {
+    var description = "CameraConfiguration("
+    description += "isLivePhotoOn: \(isLivePhotoOn.description), "
+    description += "torchMode: \(torchMode.description), "
+    description += "flashMode: \(flashMode.description), "
+    description += "zoomFactor: \(zoomFactor.description), "
+    description += "isHDRon: \(isHDRon.description), "
+    description += "lensAperture: \(lensAperture.description), "
+    description += "focusMode: \(focusMode.description), "
+    description += "lensPosition: \(lensPosition.description), "
+    description += "focusPointOfInterest: \(focusPointOfInterest.description), "
+    description += "exposureMode: \(exposureMode.description), "
+    description += "exposurePointOfInterest: \(exposurePointOfInterest.description), "
+    description += "exposureDuration: \(exposureDuration.description), "
+    description += "iso: \(iso.description), "
+    description += "whiteBalanceMode: \(whiteBalanceMode.description), "
+    description += "temperatureAndTint: \(temperatureAndTint.description), "
+    description += "whiteBalanceGains: \(whiteBalanceGains.description))"
+    return description
+  }
+}
+
+extension CameraCapabilities: CustomStringConvertible {
+  public var description: String {
+    var description = "CameraCapabilities("
+    description += "torchModes: \(torchModes), "
+    description += "flashModes: \(flashModes), "
+    description += "zoomFactorRange: \(zoomFactorRange.description), "
+    description += "focusModes: \(focusModes), "
+    description += "lensPositionRange: \(lensPositionRange.description), "
+    description += "exposureModes: \(exposureModes), "
+    description += "isoRange: \(isoRange.description), "
+    description += "exposureDurationRange: \(exposureDurationRange.description), "
+    description += "whiteBalanceModes: \(whiteBalanceModes), "
+    description += "temperatureRange: \(whiteBalanceTemperatureRange.description), "
+    description += "tintRange: \(whiteBalanceTintRange.description), "
+    description += "redGainsRange: \(whiteBalanceRedGainsRange.description), "
+    description += "greenGainsRange: \(whiteBalanceGreenGainsRange.description), "
+    description += "blueGainsRange: \(whiteBalanceBlueGainsRange.description))"
+    return description
+  }
+}
+extension CaptureServiceCommand.ConfigurationCommand
+  .FeatureTable: CustomStringConvertible
+{
+  public var description: String {
+    var description = "FeatureTable("
+    description += "setLivePhoto: \(setLivePhoto), "
+    description += "setTorchMode: \(setTorchMode), "
+    description += "setFlashMode: \(setFlashMode), "
+    description += "setZoomFactor: \(setZoomFactor), "
+    description += "smoothZoom: \(smoothZoom), "
+    description += "setHDR: \(setHDR), "
+    description += "setFocusMode: \(setFocusMode), "
+    description += "setLensPosition: \(setLensPosition), "
+    description += "setFocusPointOfInterest: \(setFocusPointOfInterest), "
+    description += "setExposureMode: \(setExposureMode), "
+    description += "setExposurePointOfInterest: \(setExposurePointOfInterest), "
+    description += "setExposureDuration: \(setExposureDuration), "
+    description += "setISO: \(setISO), "
+    description += "setWhiteBalanceMode: \(setWhiteBalanceMode), "
+    description += "setTemperatureAndTint: \(setTemperatureAndTint), "
+    description += "setWhiteBalanceGains: \(setWhiteBalanceGains), "
+    description += "lockWhiteBalanceWithGrayWorld: \(lockWhiteBalanceWithGrayWorld))"
+    return description
+  }
+}
+extension CaptureServiceStateUpdateMessage: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case let .cameraDescriptor(camera):
+      "CameraDescriptor: \(camera)"
+    case let .configuration(configuration):
+      "Configuration: \(configuration)"
+    case let .capabilities(capabilities):
+      "Capabilities: \(capabilities)"
+    case let .availableConfigurationCommands(commands):
+      "AvailableConfigurationCommands: \(commands)"
+    }
+  }
+}
+
+extension Optional: @retroactive CustomStringConvertible
+where Wrapped: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .none: "nil"
+    case let .some(value): value.description
+    }
+  }
+}

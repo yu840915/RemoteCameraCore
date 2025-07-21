@@ -53,3 +53,15 @@ extension ValueRange: Equatable {
     lhs.min == rhs.min && lhs.max == rhs.max
   }
 }
+
+extension ValueRange: CustomStringConvertible where Bound == Double {
+  public var description: String {
+    "[\(min), \(max)]"
+  }
+}
+
+extension ValueRange where Bound: SignedInteger {
+  public var description: String {
+    "[\(min), \(max)]"
+  }
+}

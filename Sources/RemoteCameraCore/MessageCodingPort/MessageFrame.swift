@@ -25,3 +25,20 @@ public struct MessageFrame: Sendable {
     self.payload = payload
   }
 }
+
+extension MessageFrame: CustomStringConvertible {
+  public var description: String {
+    "MessageFrame(channelID: \(channelID), type: \(type), payloadSize: \(payload.count) bytes)"
+  }
+}
+
+extension MessageFrame.MessageType: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .command: "command"
+    case .error: "error"
+    case .event: "event"
+    case .stateUpdate: "update"
+    }
+  }
+}

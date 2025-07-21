@@ -9,3 +9,9 @@ public struct CameraDescriptor: Sendable, Equatable {
     self.position = position
   }
 }
+
+extension CameraDescriptor: CustomStringConvertible {
+  public var description: String {
+    return "Camera(id: \(id), name: \(name), position: \(position))"
+  }
+}
