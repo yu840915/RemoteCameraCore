@@ -71,31 +71,29 @@ extension CaptureServiceClientBinding {
   }
 
   fileprivate func routeState(_ state: CaptureServiceState) async {
-    await withTaskGroup(of: Void.self) { [weak self, lastState] group in
-      group.addTask { [weak self] in
-        if state.configuration != lastState.configuration {
-          await self?.client.update(.configuration(state.configuration))
-        }
-      }
-      group.addTask { [weak self] in
-        if state.availableConfigurationCommands != lastState.availableConfigurationCommands {
-          await self?.client.update(
-            .availableConfigurationCommands(state.availableConfigurationCommands)
-          )
-        }
-      }
-      group.addTask { [weak self] in
-        if let camera = state.camera, camera != lastState.camera {
-          await self?.client.update(.cameraDescriptor(camera))
-        }
-      }
-      group.addTask { [weak self] in
-        if state.capabilities != lastState.capabilities {
-          await self?.client.update(.capabilities(state.capabilities))
+    var messages = [CaptureServiceStateUpdateMessage]()
+    if state.capabilities != lastState.capabilities {
+      messages.append(.capabilities(state.capabilities))
+    }
+    if state.availableConfigurationCommands != lastState.availableConfigurationCommands {
+      messages.append(
+        .availableConfigurationCommands(state.availableConfigurationCommands)
+      )
+    }
+    if state.configuration != lastState.configuration {
+      messages.append(.configuration(state.configuration))
+    }
+    if let camera = state.camera, camera != lastState.camera {
+      messages.append(.cameraDescriptor(camera))
+    }
+    lastState = state
+    await withTaskGroup(of: Void.self) { [weak self] group in
+      for message in messages {
+        group.addTask { [weak self] in
+          await self?.client.update(message)
         }
       }
     }
-    lastState = state
   }
 
   fileprivate func handleStateChannelCompletion(
@@ -104,7 +102,7 @@ extension CaptureServiceClientBinding {
     let error =
       switch completion {
       case .finished: BindingError.statePublisherClosed
-      case .failure(let error): error
+      case let .failure(error): error
       }
     await unbind(error, localTriggered: true)
   }
@@ -123,7 +121,7 @@ extension CaptureServiceClientBinding {
     switch completion {
     case .finished:
       await unbind(BindingError.commandPublisherClosed, localTriggered: false)
-    case .failure(let error):
+    case let .failure(error):
       await unbind(error, localTriggered: false)
     }
   }
@@ -138,7 +136,7 @@ extension CaptureServiceClientBinding {
     let error =
       switch completion {
       case .finished: BindingError.eventPublisherClosed
-      case .failure(let error): error
+      case let .failure(error): error
       }
     await unbind(error, localTriggered: true)
   }
