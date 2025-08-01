@@ -85,7 +85,11 @@ struct CameraHubServerTests {
     update.requests = [
       .init(
         controller: .init(id: "controller-1", name: "Controller 1"),
-        hub: .init(id: "hub-1", name: "Hub 1")
+        hub: .init(id: "hub-1", name: "Hub 1"),
+        connectionSuite: ConnectionSuite(
+          id: QUICOverAWDLInfo.id,
+          arguments: QUICOverAWDLInfo(port: 1234),
+        ),
       )
     ]
     update.isRunning = true
@@ -105,7 +109,11 @@ struct CameraHubServerTests {
             requests: [
               ControlRequest(
                 controller: CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
-                hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1")
+                hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1"),
+                connectionSuite: ConnectionSuite(
+                  id: QUICOverAWDLInfo.id,
+                  arguments: QUICOverAWDLInfo(port: 1234),
+                ),
               )
             ],
             isAdvertising: true,
@@ -141,7 +149,11 @@ struct CameraHubServerTests {
     update.requests = [
       .init(
         controller: .init(id: "controller-1", name: "Controller 1"),
-        hub: .init(id: "hub-1", name: "Hub 1")
+        hub: .init(id: "hub-1", name: "Hub 1"),
+        connectionSuite: ConnectionSuite(
+          id: QUICOverAWDLInfo.id,
+          arguments: QUICOverAWDLInfo(port: 1234),
+        ),
       )
     ]
     update.isRunning = true
@@ -193,7 +205,11 @@ struct CameraHubServerTests {
     let advertiser = factory.adversisers.first!
     let request = ControlRequest(
       controller: CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
-      hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1")
+      hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1"),
+      connectionSuite: ConnectionSuite(
+        id: QUICOverAWDLInfo.id,
+        arguments: QUICOverAWDLInfo(port: 1234),
+      ),
     )
 
     var update = advertiser.state$.value
@@ -353,7 +369,11 @@ struct CameraHubServerTests {
     update.requests = [
       .init(
         controller: .init(id: "controller-1", name: "Controller 1"),
-        hub: .init(id: "hub-1", name: "Hub 1")
+        hub: .init(id: "hub-1", name: "Hub 1"),
+        connectionSuite: ConnectionSuite(
+          id: QUICOverAWDLInfo.id,
+          arguments: QUICOverAWDLInfo(port: 1234),
+        ),
       )
     ]
     update.isRunning = true

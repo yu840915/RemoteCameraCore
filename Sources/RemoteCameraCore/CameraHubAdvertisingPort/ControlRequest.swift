@@ -1,12 +1,31 @@
 public struct ControlRequest: Sendable, Equatable {
   public let controller: CameraControllerDescriptor
   public let hub: CameraHubDescriptor
+  public let connectionSuite: ConnectionSuite
+
   public init(
     controller: CameraControllerDescriptor,
-    hub: CameraHubDescriptor
+    hub: CameraHubDescriptor,
+    connectionSuite: ConnectionSuite
   ) {
     self.controller = controller
     self.hub = hub
+    self.connectionSuite = connectionSuite
+  }
+}
+
+extension ControlRequest {
+  public init(
+    controller: CameraControllerDescriptor,
+    hub: CameraHubDescriptor,
+    quicOverAWDLInfo: QUICOverAWDLInfo
+  ) {
+    self.controller = controller
+    self.hub = hub
+    self.connectionSuite = .init(
+      id: QUICOverAWDLInfo.id,
+      arguments: quicOverAWDLInfo
+    )
   }
 }
 
