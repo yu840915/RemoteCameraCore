@@ -4,6 +4,11 @@ import Combine
 public actor CameraHubServiceClientBinding {
   public typealias Service = CameraHubServicePort
   public typealias Client = CameraHubClientPort
+  typealias StatusChannelCompletion = Subscribers.Completion<Never>
+  private let status$: CurrentValueSubject<NodeStatus, Never>
+  var onStatus: NonSendable<any Publisher<NodeStatus, Never>> {
+    NonSendable(status$)
+  }
   let service: any Service
   let client: any Client
   let completor: ThrowingCompleter<Void>
@@ -13,31 +18,42 @@ public actor CameraHubServiceClientBinding {
   public init(client: some Client, service: some Service) async {
     self.client = client
     self.service = service
+    status$ = .init(.preparing)
     completor = await ThrowingCompleter()
     var bag = Set<AnyCancellable>()
-    client.onCommand.sink { [weak self] completion in
+    service.onStatus.sink { [weak self] _ in
       Task { [weak self] in
-        await self?.handleCommandChannelCompletion(completion)
+        await self?.handleServiceChannelCompletion()
       }
-    } receiveValue: { [weak self] command in
+    } receiveValue: { _ in
+    }.store(in: &bag)
+    client.onStatus.sink { [weak self] _ in
+      Task { [weak self] in
+        await self?.handleClientChannelCompletion()
+      }
+    } receiveValue: { _ in
+    }.store(in: &bag)
+    Publishers.CombineLatest(
+      service.onStatus.eraseToAnyPublisher(),
+      client.onStatus.eraseToAnyPublisher(),
+    ).map { NodeStatusMerger().merge([$0.0, $0.1]) }
+      .removeDuplicates()
+      .sink { [weak self] status in
+        Task { [weak self] in
+          await self?.handleStatus(status)
+        }
+      }.store(in: &bag)
+    client.onCommand.sink { [weak self] command in
       Task { [weak self] in
         await self?.routeCommand(command)
       }
     }.store(in: &bag)
-    service.onState.sink { [weak self] completion in
-      Task { [weak self] in
-        await self?.handleStateChannelCompletion(completion)
-      }
-    } receiveValue: { [weak self] state in
+    service.onState.sink { [weak self] state in
       Task { [weak self] in
         await self?.routeState(state)
       }
     }.store(in: &bag)
-    service.onEvent.sink { [weak self] completion in
-      Task { [weak self] in
-        await self?.handleEventChannelCompletion(completion)
-      }
-    } receiveValue: { [weak self] event in
+    service.onEvent.sink { [weak self] event in
       Task { [weak self] in
         await self?.routeEvent(event)
       }
@@ -84,36 +100,20 @@ extension CameraHubServiceClientBinding {
     await client.notify(event)
   }
 
-  fileprivate func handleStateChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    let error =
-      switch completion {
-      case .finished: BindingError.statePublisherClosed
-      case .failure(let error): error
-      }
-    await unbind(error, localTriggered: true)
-  }
-
-  fileprivate func handleEventChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    let error =
-      switch completion {
-      case .finished: BindingError.eventPublisherClosed
-      case .failure(let error): error
-      }
-    await unbind(error, localTriggered: true)
-  }
-
-  fileprivate func handleCommandChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    switch completion {
-    case .finished:
-      await unbind(BindingError.commandPublisherClosed, localTriggered: false)
-    case .failure(let error):
-      await unbind(error, localTriggered: false)
+  fileprivate func handleStatus(_ status: NodeStatus) async {
+    if status$.value != status {
+      status$.send(status)
     }
+    if case .cancelled(let error) = status {
+      await unbind(error, localTriggered: true)
+    }
+  }
+
+  fileprivate func handleServiceChannelCompletion() async {
+    await unbind(BindingError.serviceClosed, localTriggered: true)
+  }
+
+  fileprivate func handleClientChannelCompletion() async {
+    await unbind(BindingError.clientClosed, localTriggered: true)
   }
 }

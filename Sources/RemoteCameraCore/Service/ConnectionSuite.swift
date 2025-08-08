@@ -27,6 +27,12 @@ public struct ConnectionSuite: Sendable, Equatable {
   }
 }
 
+extension ConnectionSuite: CustomStringConvertible {
+  public var description: String {
+    "ConnectionSuite(id: \(id), arguments: \(arguments))"
+  }
+}
+
 public struct QUICOverAWDLInfo: ConnectionArgumentProviding {
   public static let id = "quic-over-awdl"
   public let port: Int

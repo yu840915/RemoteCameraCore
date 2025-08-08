@@ -1,3 +1,5 @@
+import AsyncUtils
+import Combine
 import Testing
 
 @testable import RemoteCameraCore
@@ -8,6 +10,7 @@ struct CameraHubServiceClientBindingTests {
     state.name = "Hub 1"
     return state
   }()
+
   @Test
   func routeCommand() async throws {
     let hub = DummyCameraHub(state: state)
@@ -74,7 +77,7 @@ struct CameraHubServiceClientBindingTests {
   }
 
   @Test
-  func reportErrorOnStateChannelClose() async throws {
+  func reportErrorOnHubStatusChannelClose() async throws {
     let hub = DummyCameraHub(state: state)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
@@ -83,7 +86,7 @@ struct CameraHubServiceClientBindingTests {
 
     await confirmation { confirmation in
       Task.detached {
-        hub.state$.send(completion: .finished)
+        hub.status$.send(completion: .finished)
       }
 
       do {
@@ -100,15 +103,16 @@ struct CameraHubServiceClientBindingTests {
   }
 
   @Test
-  func propagateStateChannelError() async throws {
+  func reportErrorOnControllerStatusChannelClose() async throws {
     let hub = DummyCameraHub(state: state)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
     )
     let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
+
     await confirmation { confirmation in
-      Task {
-        hub.state$.send(completion: .failure(MockError()))
+      Task.detached {
+        controller.status$.send(completion: .finished)
       }
 
       do {
@@ -149,121 +153,55 @@ struct CameraHubServiceClientBindingTests {
   }
 
   @Test
-  func reportErrorOnEventChannelClose() async throws {
+  func reportReadyOnBothReady() async throws {
     let hub = DummyCameraHub(state: state)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
     )
     let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
 
+    let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
+    var values = [NodeStatus]()
+    var bag = Set<AnyCancellable>()
+    (await sut.onStatus).nonSendable.sink { status in
+      values.append(status)
+      if case .ready = status {
+        Task {
+          await completer.resume()
+        }
+      }
+    }.store(in: &bag)
+    hub.status$.send(.ready)
+    controller.status$.send(.ready)
+
+    try await completer.result()
+
+    #expect(values == [.preparing, .ready])
+  }
+
+  @Test
+  func unbindOnCancelStatus() async throws {
+    let hub = DummyCameraHub(state: state)
+    let controller = DummyHubController(
+      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
+    )
+    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
+
+    var outError: Error?
     await confirmation { confirmation in
       Task.detached {
-        hub.event$.send(completion: .finished)
+        hub.status$.send(.ready)
+        controller.status$.send(.cancelled(MockError()))
       }
 
       do {
         try await sut.waitUnbound()
       } catch {
+        outError = error
         confirmation()
       }
     }
 
-    guard case .error = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-    print(sut)
-  }
-
-  @Test
-  func propagateEventChannelError() async throws {
-    let hub = DummyCameraHub(state: state)
-    let controller = DummyHubController(
-      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
-    )
-    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
-    await confirmation { confirmation in
-      Task.detached {
-        hub.event$.send(completion: .failure(MockError()))
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-
-    guard case .error = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-    print(sut)
-  }
-
-  @Test
-  func terminateOnCommandChannelClose() async throws {
-    let hub = DummyCameraHub(state: state)
-    let controller = DummyHubController(
-      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
-    )
-    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
-
-    await confirmation { confirmation in
-      Task.detached {
-        controller.command$.send(completion: .finished)
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-
-    guard case .finished = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-  }
-
-  @Test
-  func propagateCommandChannelError() async throws {
-    let hub = DummyCameraHub(state: state)
-    let controller = DummyHubController(
-      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
-    )
-    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
-    await confirmation { confirmation in
-      Task {
-        controller.command$.send(completion: .failure(MockError()))
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-    guard case .finished = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-  }
-
-  @Test
-  func skipFollowingChannelError() async throws {
-    let hub = DummyCameraHub(state: state)
-    let controller = DummyHubController(
-      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
-    )
-    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
-    await confirmation { confirmation in
-      Task {
-        hub.event$.send(completion: .failure(MockError()))
-        hub.state$.send(completion: .failure(MockError()))
-      }
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
+    #expect(outError is MockError)
   }
 }

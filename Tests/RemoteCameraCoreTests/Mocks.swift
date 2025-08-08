@@ -6,9 +6,9 @@ struct MockError: Error {}
 final class DummyAdvertiserFactory: CameraHubAdvertiserFactoryPort, @unchecked Sendable {
   var adversisers: [DummyAdvertiser] = []
   func createHubAdvertiser(
-    with hubDescriptor: RemoteCameraCore.CameraHubDescriptor
+    with hubDescriptor: CameraHubDescriptor
   )
-    -> any RemoteCameraCore.CameraHubAdvertisingServicePort
+    -> any CameraHubAdvertisingServicePort
   {
     let advertiser = DummyAdvertiser(hub: hubDescriptor)
     adversisers.append(advertiser)
@@ -17,62 +17,71 @@ final class DummyAdvertiserFactory: CameraHubAdvertiserFactoryPort, @unchecked S
 }
 
 final class DummyAdvertiser: CameraHubAdvertisingServicePort, @unchecked Sendable {
-  var state$: CurrentValueSubject<RemoteCameraCore.CameraHubAdvertisingServiceState, any Error>
-  var event$: PassthroughSubject<RemoteCameraCore.CameraHubAdvertisingServiceEvent, any Error>
+  var status$ = CurrentValueSubject<NodeStatus, Never>(.preparing)
+  var state$: CurrentValueSubject<CameraHubAdvertisingServiceState, Never>
+  var event$: PassthroughSubject<CameraHubAdvertisingServiceEvent, Never>
   var error$: PassthroughSubject<Error, Never>
-  var state: RemoteCameraCore.CameraHubAdvertisingServiceState {
+  var onStatus: any Publisher<NodeStatus, Never> {
+    status$
+  }
+  var state: CameraHubAdvertisingServiceState {
     state$.value
   }
-  var onState: any Publisher<RemoteCameraCore.CameraHubAdvertisingServiceState, any Error> {
+  var onState: any Publisher<CameraHubAdvertisingServiceState, Never> {
     state$
   }
-  var onEvent: any Publisher<RemoteCameraCore.CameraHubAdvertisingServiceEvent, any Error> {
+  var onEvent: any Publisher<CameraHubAdvertisingServiceEvent, Never> {
     event$
   }
   var onError: any Publisher<Error, Never> {
     error$
   }
-  var commands: [RemoteCameraCore.CameraHubAdvertisingServiceCommand] = []
-  let hub: RemoteCameraCore.CameraHubDescriptor
-  init(hub: RemoteCameraCore.CameraHubDescriptor) {
+  var commands: [CameraHubAdvertisingServiceCommand] = []
+  let hub: CameraHubDescriptor
+  init(hub: CameraHubDescriptor) {
     self.hub = hub
     state$ = CurrentValueSubject(.init())
     event$ = PassthroughSubject()
     error$ = PassthroughSubject()
   }
 
-  func perform(_ command: RemoteCameraCore.CameraHubAdvertisingServiceCommand) async throws {
+  func perform(_ command: CameraHubAdvertisingServiceCommand) async throws {
     commands.append(command)
   }
 
 }
 
 final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
-  var controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor
-  var command$: PassthroughSubject<RemoteCameraCore.CameraHubCommand, any Error>
+  var controllerDescriptor: CameraControllerDescriptor
+  var status$: CurrentValueSubject<NodeStatus, Never>
+  var command$: PassthroughSubject<CameraHubCommand, Never>
   var error$: PassthroughSubject<Error, Never>
-  var onCommand: any Publisher<RemoteCameraCore.CameraHubCommand, any Error> {
+  var onStatus: any Publisher<NodeStatus, Never> {
+    status$
+  }
+  var onCommand: any Publisher<CameraHubCommand, Never> {
     command$
   }
   var onError: any Publisher<Error, Never> {
     error$
   }
   let actor = ClientPortActor<
-    RemoteCameraCore.CameraHubState,
-    RemoteCameraCore.CameraHubEvent
+    CameraHubState,
+    CameraHubEvent
   >()
 
-  init(controllerDescriptor: RemoteCameraCore.CameraControllerDescriptor) {
+  init(controllerDescriptor: CameraControllerDescriptor) {
     self.controllerDescriptor = controllerDescriptor
+    status$ = CurrentValueSubject(.preparing)
     command$ = PassthroughSubject()
     error$ = PassthroughSubject()
   }
 
-  func update(_ state: RemoteCameraCore.CameraHubState) async {
+  func update(_ state: CameraHubState) async {
     await actor.update(state)
   }
 
-  func notify(_ event: RemoteCameraCore.CameraHubEvent) async {
+  func notify(_ event: CameraHubEvent) async {
     await actor.notify(event)
 
   }
@@ -88,58 +97,67 @@ final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
 
 final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
   var id: String
-  var state$: CurrentValueSubject<RemoteCameraCore.CameraHubState, any Error>
-  var event$: PassthroughSubject<RemoteCameraCore.CameraHubEvent, any Error>
+  var status$: CurrentValueSubject<NodeStatus, Never>
+  var state$: CurrentValueSubject<CameraHubState, Never>
+  var event$: PassthroughSubject<CameraHubEvent, Never>
   var error$: PassthroughSubject<Error, Never>
-  var state: RemoteCameraCore.CameraHubState {
+  var onStatus: any Publisher<NodeStatus, Never> {
+    status$
+  }
+  var state: CameraHubState {
     state$.value
   }
-  var onState: any Publisher<RemoteCameraCore.CameraHubState, any Error> {
+  var onState: any Publisher<CameraHubState, Never> {
     state$
   }
-  var onEvent: any Publisher<RemoteCameraCore.CameraHubEvent, any Error> {
+  var onEvent: any Publisher<CameraHubEvent, Never> {
     event$
   }
   var onError: any Publisher<Error, Never> {
     error$
   }
-  var commands: [RemoteCameraCore.CameraHubCommand] = []
+  var commands: [CameraHubCommand] = []
 
-  init(state: RemoteCameraCore.CameraHubState) {
+  init(state: CameraHubState) {
     id = state.id
+    status$ = CurrentValueSubject(.preparing)
     state$ = CurrentValueSubject(state)
     event$ = PassthroughSubject()
     error$ = PassthroughSubject()
   }
 
-  func perform(_ command: RemoteCameraCore.CameraHubCommand) async throws {
+  func perform(_ command: CameraHubCommand) async throws {
     commands.append(command)
   }
 }
 
 final class DummyCapture: CaptureServicePort, @unchecked Sendable {
-  var onCapturedBuffer: any Publisher<RemoteCameraCore.BufferWrapper, Never> {
+  var onCapturedBuffer: any Publisher<BufferWrapper, Never> {
     Empty().eraseToAnyPublisher()
   }
-
-  var state$: CurrentValueSubject<CaptureServiceState, any Error>
-  var event$: PassthroughSubject<CaptureServiceEvent, any Error>
+  var status$: CurrentValueSubject<NodeStatus, Never>
+  var state$: CurrentValueSubject<CaptureServiceState, Never>
+  var event$: PassthroughSubject<CaptureServiceEvent, Never>
   var error$: PassthroughSubject<Error, Never>
   var state: CaptureServiceState {
     state$.value
   }
-  var onState: any Publisher<CaptureServiceState, any Error> {
+  var onStatus: any Publisher<NodeStatus, Never> {
+    status$
+  }
+  var onState: any Publisher<CaptureServiceState, Never> {
     state$
   }
-  var onEvent: any Publisher<CaptureServiceEvent, any Error> {
+  var onEvent: any Publisher<CaptureServiceEvent, Never> {
     event$
   }
-  var onError: any Publisher<any Error, Never> {
+  var onError: any Publisher<Error, Never> {
     error$
   }
   var commands: [CaptureServiceCommand] = []
 
   init(state: CaptureServiceState = .init()) {
+    status$ = CurrentValueSubject(.preparing)
     state$ = CurrentValueSubject(state)
     event$ = PassthroughSubject()
     error$ = PassthroughSubject()
@@ -151,20 +169,25 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
 }
 
 final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
-  var command$: PassthroughSubject<RemoteCameraCore.CaptureServiceCommand, any Error>
+  var status$: CurrentValueSubject<NodeStatus, Never>
+  var command$: PassthroughSubject<CaptureServiceCommand, Never>
   var error$: PassthroughSubject<Error, Never>
-  var onCommand: any Publisher<RemoteCameraCore.CaptureServiceCommand, any Error> {
+  var onStatus: any Publisher<NodeStatus, Never> {
+    status$
+  }
+  var onCommand: any Publisher<CaptureServiceCommand, Never> {
     command$
   }
   var onError: any Publisher<Error, Never> {
     error$
   }
   let actor = ClientPortActor<
-    RemoteCameraCore.CaptureServiceStateUpdateMessage,
-    RemoteCameraCore.CaptureServiceEvent
+    CaptureServiceStateUpdateMessage,
+    CaptureServiceEvent
   >()
 
   init() {
+    status$ = CurrentValueSubject(.preparing)
     command$ = PassthroughSubject()
     error$ = PassthroughSubject()
   }
@@ -173,11 +196,11 @@ final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
     await actor.setOnUpdate(onUpdate)
   }
 
-  func update(_ state: RemoteCameraCore.CaptureServiceStateUpdateMessage) async {
+  func update(_ state: CaptureServiceStateUpdateMessage) async {
     await actor.update(state)
   }
 
-  func notify(_ event: RemoteCameraCore.CaptureServiceEvent) async {
+  func notify(_ event: CaptureServiceEvent) async {
     await actor.notify(event)
   }
 

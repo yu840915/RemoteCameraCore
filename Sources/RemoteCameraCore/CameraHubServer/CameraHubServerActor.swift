@@ -6,19 +6,23 @@ actor CameraHubServerActor {
   final let advertiserFactory: any CameraHubAdvertiserFactoryPort
   private var advertiser: (any CameraHubAdvertisingServicePort)?
   private var adversiserBag: Set<AnyCancellable> = []
-  var stateStream: AsyncThrowingStream<CameraHubServerState, any Error> {
+  var statusStream: AsyncStream<NodeStatus> {
+    statusStreamWriter.stream
+  }
+  var stateStream: AsyncStream<CameraHubServerState> {
     stateStreamPipe.stream
   }
-  var eventStream: AsyncThrowingStream<CameraHubServerEvent, any Error> {
+  var eventStream: AsyncStream<CameraHubServerEvent> {
     eventStreamWriter.stream
   }
   var errorStream: AsyncStream<Error> {
     errorStreamWriter.stream
   }
-  private let eventStreamWriter = AsyncThrowingStreamWriter<CameraHubServerEvent>()
+  private let statusStreamWriter = AsyncStreamWriter<NodeStatus>()
+  private let eventStreamWriter = AsyncStreamWriter<CameraHubServerEvent>()
   private let errorStreamWriter = AsyncStreamWriter<Error>()
-  private let stateStreamPipe: SubjectToAsyncThrowingStreamPipe<CameraHubServerState, any Error>
-  private let state$ = CurrentValueSubject<CameraHubServerState, any Error>(.init())
+  private let stateStreamPipe: SubjectToAsyncStreamPipe<CameraHubServerState>
+  private let state$ = CurrentValueSubject<CameraHubServerState, Never>(.init())
   private var bindings: [CameraHubServiceClientBinding] = [] {
     didSet {
       var update = state$.value
@@ -33,7 +37,7 @@ actor CameraHubServerActor {
   ) async {
     self.localHub = localHub
     self.advertiserFactory = advertiserFactory
-    stateStreamPipe = SubjectToAsyncThrowingStreamPipe(state$)
+    stateStreamPipe = SubjectToAsyncStreamPipe(state$)
   }
 
   func perform(_ command: CameraHubServerCommand) async throws {
@@ -103,7 +107,7 @@ extension CameraHubServerActor {
     }
   }
 
-  fileprivate func onAdvertiserChannelCompletion(_ completion: Subscribers.Completion<any Error>) {
+  fileprivate func onAdvertiserChannelCompletion(_ completion: Subscribers.Completion<Never>) {
     switch completion {
     case let .failure(error):
       eventStreamWriter.send(.advertiserStopped(error))

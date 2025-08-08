@@ -6,9 +6,12 @@ public actor CaptureServiceClientBinding {
   public typealias Client = CaptureClientPort
   public let service: any Service
   public let client: any Client
-
+  public var onStatus: NonSendable<any Publisher<NodeStatus, Never>> {
+    NonSendable(status$)
+  }
   let completor: ThrowingCompleter<Void>
   private var isBound = true
+  private let status$ = CurrentValueSubject<NodeStatus, Never>(.preparing)
   private var lastState = CaptureServiceState()
   private var bag = Set<AnyCancellable>()
 
@@ -17,29 +20,39 @@ public actor CaptureServiceClientBinding {
     self.service = service
     completor = await ThrowingCompleter()
     var bag = Set<AnyCancellable>()
-    client.onCommand.sink { [weak self] completion in
+    client.onStatus.sink { [weak self] _ in
       Task { [weak self] in
-        await self?.handleCommandChannelCompletion(completion)
+        await self?.handleClientChannelCompletion()
       }
-    } receiveValue: { [weak self] command in
+    } receiveValue: { _ in
+    }.store(in: &bag)
+    service.onStatus.sink { [weak self] completion in
+      Task { [weak self] in
+        await self?.handleServiceChannelCompletion()
+      }
+    } receiveValue: { _ in
+    }.store(in: &bag)
+    Publishers.CombineLatest(
+      service.onStatus.eraseToAnyPublisher(),
+      client.onStatus.eraseToAnyPublisher(),
+    ).map { NodeStatusMerger().merge([$0.0, $0.1]) }
+      .removeDuplicates()
+      .sink { [weak self] status in
+        Task { [weak self] in
+          await self?.handleStatus(status)
+        }
+      }.store(in: &bag)
+    client.onCommand.sink { [weak self] command in
       Task { [weak self] in
         await self?.routeCommand(command)
       }
     }.store(in: &bag)
-    service.onState.sink { [weak self] completion in
-      Task { [weak self] in
-        await self?.handleStateChannelCompletion(completion)
-      }
-    } receiveValue: { [weak self] state in
+    service.onState.sink { [weak self] state in
       Task { [weak self] in
         await self?.routeState(state)
       }
     }.store(in: &bag)
-    service.onEvent.sink { [weak self] completion in
-      Task { [weak self] in
-        await self?.handleEventChannelCompletion(completion)
-      }
-    } receiveValue: { [weak self] event in
+    service.onEvent.sink { [weak self] event in
       Task { [weak self] in
         await self?.routeEvent(event)
       }
@@ -70,6 +83,14 @@ extension CaptureServiceClientBinding {
     self.bag = bag
   }
 
+  fileprivate func handleServiceChannelCompletion() async {
+    await unbind(BindingError.serviceClosed, localTriggered: true)
+  }
+
+  fileprivate func handleClientChannelCompletion() async {
+    await unbind(BindingError.clientClosed, localTriggered: true)
+  }
+
   fileprivate func routeState(_ state: CaptureServiceState) async {
     var messages = [CaptureServiceStateUpdateMessage]()
     if state.capabilities != lastState.capabilities {
@@ -96,17 +117,6 @@ extension CaptureServiceClientBinding {
     }
   }
 
-  fileprivate func handleStateChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    let error =
-      switch completion {
-      case .finished: BindingError.statePublisherClosed
-      case let .failure(error): error
-      }
-    await unbind(error, localTriggered: true)
-  }
-
   fileprivate func routeCommand(_ command: CaptureServiceCommand) async {
     do {
       try await service.perform(command)
@@ -115,29 +125,16 @@ extension CaptureServiceClientBinding {
     }
   }
 
-  fileprivate func handleCommandChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    switch completion {
-    case .finished:
-      await unbind(BindingError.commandPublisherClosed, localTriggered: false)
-    case let .failure(error):
-      await unbind(error, localTriggered: false)
-    }
-  }
-
   fileprivate func routeEvent(_ event: CaptureServiceEvent) async {
     await client.notify(event)
   }
 
-  fileprivate func handleEventChannelCompletion(
-    _ completion: Subscribers.Completion<Error>
-  ) async {
-    let error =
-      switch completion {
-      case .finished: BindingError.eventPublisherClosed
-      case let .failure(error): error
-      }
-    await unbind(error, localTriggered: true)
+  fileprivate func handleStatus(_ status: NodeStatus) async {
+    if status$.value != status {
+      status$.send(status)
+    }
+    if case .cancelled(let error) = status {
+      await unbind(error, localTriggered: true)
+    }
   }
 }

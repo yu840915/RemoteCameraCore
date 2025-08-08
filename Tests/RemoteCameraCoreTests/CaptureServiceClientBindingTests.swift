@@ -1,4 +1,5 @@
 import AsyncUtils
+import Combine
 import RemoteCameraCore
 import Testing
 
@@ -23,14 +24,14 @@ struct CaptureServiceClientBindingTests {
   }
 
   @Test
-  func unbindOnCommandChannelClose() async throws {
+  func unbindOnCaptureStatusChannelClose() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
 
     await confirmation { confirmation in
       Task.detached {
-        controller.command$.send(completion: .finished)
+        capture.status$.send(completion: .finished)
       }
 
       do {
@@ -40,20 +41,20 @@ struct CaptureServiceClientBindingTests {
       }
     }
 
-    guard case .finished = await controller.actor.unbindInvocation else {
+    guard case .error = await controller.actor.unbindInvocation else {
       throw TestError.conditionFailed
     }
   }
 
   @Test
-  func unbindOnCommandChannelError() async throws {
+  func unbindOnControllerStatusChannelClose() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
 
     await confirmation { confirmation in
       Task.detached {
-        controller.command$.send(completion: .failure(TestError.conditionFailed))
+        controller.status$.send(completion: .finished)
       }
 
       do {
@@ -63,7 +64,7 @@ struct CaptureServiceClientBindingTests {
       }
     }
 
-    guard case .finished = await controller.actor.unbindInvocation else {
+    guard case .error = await controller.actor.unbindInvocation else {
       throw TestError.conditionFailed
     }
   }
@@ -83,98 +84,6 @@ struct CaptureServiceClientBindingTests {
       throw TestError.conditionFailed
     }
     print(sut)
-  }
-
-  @Test
-  func reportErrorOnEventChannelClose() async throws {
-    let capture = DummyCapture()
-    let controller = DummyCaptureController()
-    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
-
-    await confirmation { confirmation in
-      Task.detached {
-        capture.event$.send(completion: .finished)
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-
-    guard case .error = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-  }
-
-  @Test
-  func propagateEventChannelError() async throws {
-    let capture = DummyCapture()
-    let controller = DummyCaptureController()
-    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
-
-    await confirmation { confirmation in
-      Task.detached {
-        capture.event$.send(completion: .failure(TestError.conditionFailed))
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-
-    guard case .error = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-  }
-
-  @Test
-  func reportErrorOnStateChannelClose() async throws {
-    let capture = DummyCapture()
-    let controller = DummyCaptureController()
-    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
-
-    await confirmation { confirmation in
-      Task.detached {
-        capture.state$.send(completion: .finished)
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-
-    guard case .error = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
-  }
-
-  @Test
-  func propagateStateChannelError() async throws {
-    let capture = DummyCapture()
-    let controller = DummyCaptureController()
-    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
-
-    await confirmation { confirmation in
-      Task.detached {
-        capture.state$.send(completion: .failure(TestError.conditionFailed))
-      }
-
-      do {
-        try await sut.waitUnbound()
-      } catch {
-        confirmation()
-      }
-    }
-
-    guard case .error = await controller.actor.unbindInvocation else {
-      throw TestError.conditionFailed
-    }
   }
 
   @Test
@@ -250,5 +159,54 @@ struct CaptureServiceClientBindingTests {
     received.update(last)
     #expect(received == update)
     print(sut)
+  }
+
+  @Test
+  func reportReadyOnBothReady() async throws {
+    let capture = DummyCapture()
+    let controller = DummyCaptureController()
+    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
+
+    let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
+    var values = [NodeStatus]()
+    var bag = Set<AnyCancellable>()
+    (await sut.onStatus).nonSendable.sink { status in
+      values.append(status)
+      if case .ready = status {
+        Task {
+          await completer.resume()
+        }
+      }
+    }.store(in: &bag)
+    capture.status$.send(.ready)
+    controller.status$.send(.ready)
+
+    try await completer.result()
+
+    #expect(values == [.preparing, .ready])
+  }
+
+  @Test
+  func unbindOnCancelStatus() async throws {
+    let capture = DummyCapture()
+    let controller = DummyCaptureController()
+    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
+
+    var outError: Error?
+    await confirmation { confirmation in
+      Task.detached {
+        capture.status$.send(.ready)
+        controller.status$.send(.cancelled(MockError()))
+      }
+
+      do {
+        try await sut.waitUnbound()
+      } catch {
+        outError = error
+        confirmation()
+      }
+    }
+
+    #expect(outError is MockError)
   }
 }
