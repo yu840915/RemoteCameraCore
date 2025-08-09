@@ -30,6 +30,8 @@ actor CameraHubServerActor {
       state$.value = update
     }
   }
+  private var advertiserBag = Set<AnyCancellable>()
+  private var hubBag: Set<AnyCancellable> = []
 
   init(
     localHub: some CameraHubServicePort,
@@ -38,9 +40,19 @@ actor CameraHubServerActor {
     self.localHub = localHub
     self.advertiserFactory = advertiserFactory
     stateStreamPipe = SubjectToAsyncStreamPipe(state$)
+    localHub.onStatus.sink { [weak self] _ in
+      Task { [weak self] in
+        await self?.onHubStatusCompletion()
+      }
+    } receiveValue: { [weak self] status in
+      Task { [weak self] in
+        await self?.handleHubStatus(status)
+      }
+    }.store(in: &hubBag)
   }
 
   func perform(_ command: CameraHubServerCommand) async throws {
+    //TODO: check hub status before acting
     switch command {
     case .startAdvertising:
       try await startAdvertising()
@@ -66,20 +78,21 @@ extension CameraHubServerActor {
       )
     )
     var bag = Set<AnyCancellable>()
-    advertiser.onState.sink { [weak self] completion in
+    advertiser.onStatus.sink { [weak self] _ in
       Task { [weak self] in
-        await self?.onAdvertiserChannelCompletion(completion)
+        await self?.onAdvertiserStatusCompletion()
       }
-    } receiveValue: { [weak self] state in
+    } receiveValue: { [weak self] status in
+      Task { [weak self] in
+        await self?.onAdvertiserStatus(status)
+      }
+    }.store(in: &bag)
+    advertiser.onState.sink { [weak self] state in
       Task { [weak self] in
         await self?.onAdvertiserState(state)
       }
     }.store(in: &bag)
-    advertiser.onEvent.sink { [weak self] completion in
-      Task { [weak self] in
-        await self?.onAdvertiserChannelCompletion(completion)
-      }
-    } receiveValue: { [weak self] event in
+    advertiser.onEvent.sink { [weak self] event in
       Task { [weak self] in
         await self?.onAdvertiserEvent(event)
       }
@@ -107,13 +120,26 @@ extension CameraHubServerActor {
     }
   }
 
-  fileprivate func onAdvertiserChannelCompletion(_ completion: Subscribers.Completion<Never>) {
-    switch completion {
-    case let .failure(error):
-      eventStreamWriter.send(.advertiserStopped(error))
-    case .finished:
-      eventStreamWriter.send(.advertiserStopped(nil))
+  fileprivate func handleHubStatus(_ status: NodeStatus) async {
+    statusStreamWriter.send(status)
+    if case .cancelled = status {
+      statusStreamWriter.finish()
     }
+  }
+
+  fileprivate func onHubStatusCompletion() {
+    statusStreamWriter.send(.cancelled(nil))
+    statusStreamWriter.finish()
+  }
+
+  fileprivate func onAdvertiserStatus(_ status: NodeStatus) {
+    if case .cancelled = status {
+      onAdvertiserStatusCompletion()
+    }
+  }
+
+  fileprivate func onAdvertiserStatusCompletion() {
+    eventStreamWriter.send(.advertiserStopped(nil))
     removeAdvertiser()
   }
 

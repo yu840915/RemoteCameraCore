@@ -4,19 +4,21 @@ import Combine
 public final class CameraHubServer: StateServicePort {
   public typealias Event = CameraHubServerEvent
   public typealias Command = CameraHubServerCommand
+
   private let actor: CameraHubServerActor
-  nonisolated(unsafe) let status$: CurrentValueSubject<NodeStatus, Never> =
+  private nonisolated(unsafe) let status$: CurrentValueSubject<NodeStatus, Never> =
     CurrentValueSubject<NodeStatus, Never>(.preparing)
-  nonisolated(unsafe) let state$: CurrentValueSubject<CameraHubServerState, Never> =
+  private nonisolated(unsafe) let state$: CurrentValueSubject<CameraHubServerState, Never> =
     CurrentValueSubject<CameraHubServerState, Never>(.init())
-  nonisolated(unsafe) let event$ = PassthroughSubject<CameraHubServerEvent, Never>()
-  nonisolated(unsafe) let error$ = PassthroughSubject<Error, Never>()
+  private nonisolated(unsafe) let event$ = PassthroughSubject<CameraHubServerEvent, Never>()
+  private nonisolated(unsafe) let error$ = PassthroughSubject<Error, Never>()
   private nonisolated(unsafe) var pipes: [StreamPipe] = []
+
+  public var onStatus: any Publisher<NodeStatus, Never> { status$ }
   public var state: CameraHubServerState { state$.value }
   public var onState: any Publisher<CameraHubServerState, Never> { state$ }
   public var onEvent: any Publisher<CameraHubServerEvent, Never> { event$ }
   public var onError: any Publisher<Error, Never> { error$ }
-  public var onStatus: any Publisher<NodeStatus, Never> { status$ }
 
   public init(
     localHub: some CameraHubServicePort,

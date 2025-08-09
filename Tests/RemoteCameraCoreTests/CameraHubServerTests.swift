@@ -315,7 +315,7 @@ struct CameraHubServerTests {
         await perform.resume()
       }
     }
-    controller.command$.send(completion: .finished)
+    controller.status$.send(completion: .finished)
     await perform.result()
 
     let serverStates = await stateActor.values
@@ -326,7 +326,83 @@ struct CameraHubServerTests {
   }
 
   @Test
-  func stopAdvertisingOnAdvertiserChannelError() async throws {
+  func beReadyIfHubIsReady() async throws {
+    let factory = DummyAdvertiserFactory()
+    let hub = DummyCameraHub(
+      state: CameraHubState(id: "hub-1", name: "Hub 1")
+    )
+    let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
+
+    var bag = Set<AnyCancellable>()
+    let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
+
+    sut.onStatus.sink { status in
+      if status == .ready {
+        Task {
+          await completer.resume()
+        }
+      }
+    }.store(in: &bag)
+
+    hub.status$.send(.ready)
+
+    try await completer.result()
+  }
+
+  @Test
+  func cancelsServerOnHubCancellation() async throws {
+    let factory = DummyAdvertiserFactory()
+    let hub = DummyCameraHub(
+      state: CameraHubState(id: "hub-1", name: "Hub 1")
+    )
+    let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
+
+    var bag = Set<AnyCancellable>()
+    let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
+    var lastStatus: NodeStatus?
+
+    sut.onStatus.sink { _ in
+      Task {
+        await completer.resume()
+      }
+    } receiveValue: {
+      lastStatus = $0
+    }.store(in: &bag)
+
+    hub.status$.send(.cancelled(nil))
+
+    try await completer.result()
+    #expect(lastStatus == .cancelled(nil))
+  }
+
+  @Test
+  func cancelsServerOnHubStatusCompletion() async throws {
+    let factory = DummyAdvertiserFactory()
+    let hub = DummyCameraHub(
+      state: CameraHubState(id: "hub-1", name: "Hub 1")
+    )
+    let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
+
+    var bag = Set<AnyCancellable>()
+    let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
+    var lastStatus: NodeStatus?
+
+    sut.onStatus.sink { _ in
+      Task {
+        await completer.resume()
+      }
+    } receiveValue: {
+      lastStatus = $0
+    }.store(in: &bag)
+
+    hub.status$.send(completion: .finished)
+
+    try await completer.result()
+    #expect(lastStatus == .cancelled(nil))
+  }
+
+  @Test
+  func stopAdvertisingOnAdvertiserStatusChannelCompletion() async throws {
     let factory = DummyAdvertiserFactory()
     var state = CameraHubState(id: "hub-1")
     state.name = "Hub 1"
@@ -334,7 +410,6 @@ struct CameraHubServerTests {
     let sut = await CameraHubServer(localHub: hub, advertiserFactory: factory)
 
     let setUp = await Completer<Void>()
-    let eventCompleter = await Completer<Void>()
     let stateCompleter = await Completer<Void>()
     let stateActor = CollectionActor<CameraHubServerState>()
     var bag = Set<AnyCancellable>()
@@ -357,12 +432,6 @@ struct CameraHubServerTests {
           await stateActor.append(state)
         }
       }.store(in: &bag)
-    sut.onEvent.sink { _ in
-    } receiveValue: { event in
-      Task {
-        await eventCompleter.resume()
-      }
-    }.store(in: &bag)
     try await sut.perform(.startAdvertising)
     let advertiser = factory.adversisers.first!
     var update = advertiser.state$.value
@@ -380,8 +449,7 @@ struct CameraHubServerTests {
     advertiser.state$.value = update
     await setUp.result()
 
-    advertiser.event$.send(completion: .failure(MockError()))
-    await eventCompleter.result()
+    advertiser.status$.send(.cancelled(MockError()))
     await stateCompleter.result()
 
     let serverStates = await stateActor.values
