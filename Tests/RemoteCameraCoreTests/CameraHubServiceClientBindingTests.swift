@@ -12,13 +12,15 @@ struct CameraHubServiceClientBindingTests {
   }()
 
   @Test
-  func routeCommand() async throws {
+  func routeCommandWhenServiceIsReady() async throws {
     let hub = DummyCameraHub(state: state)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
     )
     let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
 
+    hub.status$.send(.ready)
+    try await Task.sleep(for: .milliseconds(1))
     controller.command$.send(
       .requestCapture(
         args: .init(
@@ -46,7 +48,62 @@ struct CameraHubServiceClientBindingTests {
   }
 
   @Test
-  func routeState() async throws {
+  func dropCommandWhenServiceIsNotReady() async throws {
+    let hub = DummyCameraHub(state: state)
+    let controller = DummyHubController(
+      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
+    )
+    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
+
+    controller.command$.send(
+      .requestCapture(
+        args: .init(
+          camera: CameraDescriptor(id: "cam01", name: "front came", position: .builtInFront)
+        )
+      )
+    )
+    try await Task.sleep(for: .milliseconds(10))
+
+    #expect(hub.commands.count == 0)
+    print(sut)
+  }
+
+  @Test
+  func routeStateWhenClientIsReady() async throws {
+    let hub = DummyCameraHub(state: state)
+    let controller = DummyHubController(
+      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
+    )
+    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
+    try await Task.sleep(for: .milliseconds(1))
+
+    hub.state$.value.cameras = [
+      CameraDescriptor(id: "cam01", name: "front camera", position: .builtInFront),
+      CameraDescriptor(id: "cam02", name: "back camera", position: .builtInBack),
+    ]
+    try await Task.sleep(for: .milliseconds(1))
+
+    controller.status$.send(.ready)
+    try await Task.sleep(for: .milliseconds(1))
+
+    let updates = await controller.actor.updates
+    #expect(updates.count > 0)
+    guard let update = updates.last else {
+      throw TestError.conditionFailed
+    }
+    #expect(update.id == "hub-1")
+    #expect(update.name == "Hub 1")
+    #expect(
+      update.cameras == [
+        CameraDescriptor(id: "cam01", name: "front camera", position: .builtInFront),
+        CameraDescriptor(id: "cam02", name: "back camera", position: .builtInBack),
+      ]
+    )
+    print(sut)
+  }
+
+  @Test
+  func dropStateWhenClientIsNotReady() async throws {
     let hub = DummyCameraHub(state: state)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
@@ -61,18 +118,8 @@ struct CameraHubServiceClientBindingTests {
     try await Task.sleep(for: .milliseconds(1))
 
     let updates = await controller.actor.updates
-    #expect(updates.count == 3)
-    guard let update = updates.last else {
-      throw TestError.conditionFailed
-    }
-    #expect(update.id == "hub-1")
-    #expect(update.name == "Hub 1")
-    #expect(
-      update.cameras == [
-        CameraDescriptor(id: "cam01", name: "front camera", position: .builtInFront),
-        CameraDescriptor(id: "cam02", name: "back camera", position: .builtInBack),
-      ]
-    )
+    #expect(updates.count == 0)
+
     print(sut)
   }
 
@@ -129,7 +176,7 @@ struct CameraHubServiceClientBindingTests {
   }
 
   @Test
-  func handleEvent() async throws {
+  func routeEventIfClientIsReady() async throws {
     let hub = DummyCameraHub(state: state)
     let controller = DummyHubController(
       controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
@@ -137,6 +184,8 @@ struct CameraHubServiceClientBindingTests {
     let capture = DummyCapture()
     let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
 
+    controller.status$.send(.ready)
+    try await Task.sleep(for: .milliseconds(1))
     hub.event$.send(.capture(capture: capture))
     try await Task.sleep(for: .milliseconds(1))
 
@@ -149,6 +198,23 @@ struct CameraHubServiceClientBindingTests {
       throw TestError.conditionFailed
     }
     #expect(capture === argCapture)
+    print(sut)
+  }
+
+  @Test
+  func dropEventIfClientIsNotReady() async throws {
+    let hub = DummyCameraHub(state: state)
+    let controller = DummyHubController(
+      controllerDescriptor: .init(id: "controller-1", name: "Controller 1")
+    )
+    let capture = DummyCapture()
+    let sut = await CameraHubServiceClientBinding(client: controller, service: hub)
+
+    hub.event$.send(.capture(capture: capture))
+    try await Task.sleep(for: .milliseconds(1))
+
+    let events = await controller.actor.events
+    #expect(events.count == 0)
     print(sut)
   }
 

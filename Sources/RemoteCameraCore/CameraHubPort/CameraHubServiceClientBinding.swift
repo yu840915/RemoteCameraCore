@@ -13,7 +13,9 @@ public actor CameraHubServiceClientBinding {
   let client: any Client
   let completor: ThrowingCompleter<Void>
   private var isBound = true
-  private var bag = Set<AnyCancellable>()
+  nonisolated(unsafe) private var clientBag = Set<AnyCancellable>()
+  nonisolated(unsafe) private var serviceBag = Set<AnyCancellable>()
+  nonisolated(unsafe) private var statusBag = Set<AnyCancellable>()
 
   public init(client: some Client, service: some Service) async {
     self.client = client
@@ -25,13 +27,19 @@ public actor CameraHubServiceClientBinding {
       Task { [weak self] in
         await self?.handleServiceChannelCompletion()
       }
-    } receiveValue: { _ in
+    } receiveValue: { [weak self] status in
+      Task { [weak self] in
+        await self?.handleServiceStatus(status)
+      }
     }.store(in: &bag)
     client.onStatus.sink { [weak self] _ in
       Task { [weak self] in
         await self?.handleClientChannelCompletion()
       }
-    } receiveValue: { _ in
+    } receiveValue: { [weak self] status in
+      Task { [weak self] in
+        await self?.handleClientStatus(status)
+      }
     }.store(in: &bag)
     Publishers.CombineLatest(
       service.onStatus.eraseToAnyPublisher(),
@@ -43,23 +51,7 @@ public actor CameraHubServiceClientBinding {
           await self?.handleStatus(status)
         }
       }.store(in: &bag)
-    client.onCommand.sink { [weak self] command in
-      Task { [weak self] in
-        await self?.routeCommand(command)
-      }
-    }.store(in: &bag)
-    service.onState.sink { [weak self] state in
-      Task { [weak self] in
-        await self?.routeState(state)
-      }
-    }.store(in: &bag)
-    service.onEvent.sink { [weak self] event in
-      Task { [weak self] in
-        await self?.routeEvent(event)
-      }
-    }.store(in: &bag)
-    updateBag(bag)
-    await routeState(service.state)
+    statusBag = bag
   }
 
   public func waitUnbound() async throws {
@@ -69,7 +61,7 @@ public actor CameraHubServiceClientBinding {
   public func unbind(_ error: Error?, localTriggered: Bool) async {
     guard isBound else { return }
     isBound = false
-    bag = []
+    statusBag = []
     await client.unbind(localTriggered ? error : nil)
     if let error = error {
       await completor.resume(throwing: error)
@@ -81,7 +73,7 @@ public actor CameraHubServiceClientBinding {
 
 extension CameraHubServiceClientBinding {
   fileprivate func updateBag(_ bag: Set<AnyCancellable>) {
-    self.bag = bag
+    self.statusBag = bag
   }
 
   fileprivate func routeCommand(_ command: CameraHubCommand) async {
@@ -107,6 +99,43 @@ extension CameraHubServiceClientBinding {
     if case .cancelled(let error) = status {
       await unbind(error, localTriggered: true)
     }
+  }
+
+  fileprivate func handleServiceStatus(_ status: NodeStatus) async {
+    switch status {
+    case .ready: prepareClientChannels()
+    default: clientBag = []
+    }
+  }
+
+  fileprivate func prepareClientChannels() {
+    client.onCommand.sink { [weak self] command in
+      Task { [weak self] in
+        await self?.routeCommand(command)
+      }
+    }.store(in: &clientBag)
+  }
+
+  fileprivate func handleClientStatus(_ status: NodeStatus) async {
+    switch status {
+    case .ready:
+      prepareServiceChannels()
+      await routeState(service.state)
+    default: serviceBag = []
+    }
+  }
+
+  fileprivate func prepareServiceChannels() {
+    service.onState.sink { [weak self] state in
+      Task { [weak self] in
+        await self?.routeState(state)
+      }
+    }.store(in: &serviceBag)
+    service.onEvent.sink { [weak self] event in
+      Task { [weak self] in
+        await self?.routeEvent(event)
+      }
+    }.store(in: &serviceBag)
   }
 
   fileprivate func handleServiceChannelCompletion() async {
