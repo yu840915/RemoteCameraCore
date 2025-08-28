@@ -72,10 +72,6 @@ public actor CameraHubServiceClientBinding {
 }
 
 extension CameraHubServiceClientBinding {
-  fileprivate func updateBag(_ bag: Set<AnyCancellable>) {
-    self.statusBag = bag
-  }
-
   fileprivate func routeCommand(_ command: CameraHubCommand) async {
     do {
       try await service.perform(command)

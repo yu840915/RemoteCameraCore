@@ -2,7 +2,7 @@ public enum CaptureServiceCommand: Sendable {
   case start
   case stop
   case takePicture
-  case swithCamera(cameraID: String)
+  case switchCamera(cameraID: String)
   case configure(commands: [ConfigurationCommand])
 }
 

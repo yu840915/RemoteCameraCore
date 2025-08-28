@@ -5,21 +5,38 @@ import Testing
 
 struct CaptureServiceClientBindingTests {
   @Test
-  func routeCommand() async throws {
+  func routeCommandIfCaptureIsReady() async throws {
+    let capture = DummyCapture()
+    let controller = DummyCaptureController()
+    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
+
+    capture.status$.send(.ready)
+    try await Task.sleep(for: .milliseconds(1))
+    controller.command$.send(
+      .switchCamera(cameraID: "cam-1")
+    )
+    try await Task.sleep(for: .milliseconds(1))
+
+    #expect(capture.commands.count == 1)
+    guard case let .switchCamera(cameraID) = capture.commands.first else {
+      throw TestError.conditionFailed
+    }
+    #expect(cameraID == "cam-1")
+    print(sut)
+  }
+
+  @Test
+  func dropCommandIfCaptureIsNotReady() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
 
     controller.command$.send(
-      .swithCamera(cameraID: "cam-1")
+      .switchCamera(cameraID: "cam-1")
     )
     try await Task.sleep(for: .milliseconds(1))
 
-    #expect(capture.commands.count == 1)
-    guard case let .swithCamera(cameraID) = capture.commands.first else {
-      throw TestError.conditionFailed
-    }
-    #expect(cameraID == "cam-1")
+    #expect(capture.commands.count == 0)
     print(sut)
   }
 
@@ -70,11 +87,13 @@ struct CaptureServiceClientBindingTests {
   }
 
   @Test
-  func routeEvent() async throws {
+  func routeEventIfControllerIsReady() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
 
+    controller.status$.send(.ready)
+    try await Task.sleep(for: .milliseconds(1))
     capture.event$.send(.photoCaptured)
     try await Task.sleep(for: .milliseconds(1))
 
@@ -83,6 +102,20 @@ struct CaptureServiceClientBindingTests {
     guard case .photoCaptured = events.first else {
       throw TestError.conditionFailed
     }
+    print(sut)
+  }
+
+  @Test
+  func dropEventIfControllerIsNotReady() async throws {
+    let capture = DummyCapture()
+    let controller = DummyCaptureController()
+    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
+
+    capture.event$.send(.photoCaptured)
+    try await Task.sleep(for: .milliseconds(1))
+
+    let events = await controller.actor.events
+    #expect(events.count == 0)
     print(sut)
   }
 
@@ -110,6 +143,7 @@ struct CaptureServiceClientBindingTests {
       }
     }
     sut = await CaptureServiceClientBinding(client: controller, service: capture)
+    controller.status$.send(.ready)    
     await completer.result()
     let updates = await controller.actor.updates
     received.update(updates)
@@ -118,7 +152,7 @@ struct CaptureServiceClientBindingTests {
   }
 
   @Test
-  func updateCamera() async throws {
+  func updateCameraIfControllerIsReady() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
@@ -129,6 +163,7 @@ struct CaptureServiceClientBindingTests {
     update.capabilities.exposureModes = [.auto, .locked]
     var received = update
     capture.state$.send(update)
+    controller.status$.send(.ready)
     let preparation = await Completer<Void>()
     await controller.setOnUpdate { updates in
       if updates.count >= 4 {
