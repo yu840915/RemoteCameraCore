@@ -13,3 +13,9 @@ public struct CameraHubState: Sendable, Equatable {
     self.cameras = cameras
   }
 }
+
+extension CameraHubState: CustomStringConvertible {
+  public var description: String {
+    "CameraHubState(id: \(id), name: \(name), cameras: \(cameras))"
+  }
+}

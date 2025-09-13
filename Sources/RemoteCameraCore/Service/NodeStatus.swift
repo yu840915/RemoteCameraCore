@@ -13,6 +13,23 @@ public enum NodeStatus: Sendable, Equatable {
   case cancelled(Error?)
 }
 
+extension NodeStatus: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .ready:
+      "Ready"
+    case .preparing:
+      "Preparing"
+    case let .cancelled(error):
+      if let error {
+        "Cancelled with error \(error)"
+      } else {
+        "Cancelled"
+      }
+    }
+  }
+}
+
 struct NodeStatusMerger {
   func merge(_ statuses: [NodeStatus]) -> NodeStatus {
     statuses.first {
