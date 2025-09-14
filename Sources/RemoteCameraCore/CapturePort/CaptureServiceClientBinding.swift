@@ -114,6 +114,11 @@ extension CaptureServiceClientBinding {
         await self?.routeEvent(event)
       }
     }.store(in: &serviceBag)
+    service.onCapturedBuffer.sink { [weak self] buffer in
+      Task { [weak self] in
+        await self?.routeBuffer(buffer)
+      }
+    }.store(in: &serviceBag)
   }
 
   fileprivate func routeState(_ state: CaptureServiceState) async {
@@ -152,6 +157,10 @@ extension CaptureServiceClientBinding {
 
   fileprivate func routeEvent(_ event: CaptureServiceEvent) async {
     await client.notify(event)
+  }
+
+  fileprivate func routeBuffer(_ buffer: BufferWrapper) async {
+    await client.receive(buffer)
   }
 
   fileprivate func handleStatus(_ status: NodeStatus) async {

@@ -8,9 +8,11 @@ public final class BufferWrapper: Sendable {
   }
 
   public let typeHint: TypeHint
+  public let channel: Int?
   public nonisolated(unsafe) let buffer: Any
-  public init(buffer: Any, typeHint: TypeHint) {
+  public init(buffer: Any, typeHint: TypeHint, channel: Int? = nil) {
     self.buffer = buffer
     self.typeHint = typeHint
+    self.channel = channel
   }
 }

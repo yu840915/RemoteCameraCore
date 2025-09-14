@@ -133,8 +133,10 @@ final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
 
 final class DummyCapture: CaptureServicePort, @unchecked Sendable {
   var onCapturedBuffer: any Publisher<BufferWrapper, Never> {
-    Empty().eraseToAnyPublisher()
+    buffer$
   }
+  var buffer$: PassthroughSubject<BufferWrapper, Never>
+
   var status$: CurrentValueSubject<NodeStatus, Never>
   var state$: CurrentValueSubject<CaptureServiceState, Never>
   var event$: PassthroughSubject<CaptureServiceEvent, Never>
@@ -157,6 +159,7 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
   var commands: [CaptureServiceCommand] = []
 
   init(state: CaptureServiceState = .init()) {
+    buffer$ = PassthroughSubject()
     status$ = CurrentValueSubject(.preparing)
     state$ = CurrentValueSubject(state)
     event$ = PassthroughSubject()
@@ -211,6 +214,10 @@ final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
   func unbind(_ error: (any Error)?) async {
     await actor.unbind(error)
   }
+
+  func receive(_ buffer: BufferWrapper) async {
+    await actor.receive(buffer)
+  }
 }
 
 actor ClientPortActor<State, Event>
@@ -219,6 +226,7 @@ where State: Sendable, Event: Sendable {
   var onUpdate: (([State]) -> Void)?
   var events: [Event] = []
   var errors: [any Error] = []
+  var buffers: [BufferWrapper] = []
   var unbindInvocation: UnbindInvocation?
 
   func setOnUpdate(_ onUpdate: @Sendable @escaping ([State]) -> Void) {
@@ -247,6 +255,10 @@ where State: Sendable, Event: Sendable {
     } else {
       unbindInvocation = .finished
     }
+  }
+
+  func receive(_ buffer: BufferWrapper) {
+    buffers.append(buffer)
   }
 }
 

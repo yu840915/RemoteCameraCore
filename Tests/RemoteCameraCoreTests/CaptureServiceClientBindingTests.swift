@@ -41,6 +41,42 @@ struct CaptureServiceClientBindingTests {
   }
 
   @Test
+  func routeBuffer() async throws {
+    let capture = DummyCapture()
+    let controller = DummyCaptureController()
+    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
+
+    controller.status$.send(.ready)
+    try await Task.sleep(for: .milliseconds(1))
+    let buffer = BufferWrapper.init(buffer: "Dummy", typeHint: .data(class: "String"))
+
+    capture.buffer$.send(buffer)
+    try await Task.sleep(for: .milliseconds(1))
+
+    let buffers = await controller.actor.buffers
+    #expect(buffers.count == 1)
+    #expect(buffers.first?.buffer as? String == "Dummy")
+    print(sut)
+  }
+
+  @Test
+  func dropBufferIfControllerIsNotReady() async throws {
+    let capture = DummyCapture()
+    let controller = DummyCaptureController()
+    let sut = await CaptureServiceClientBinding(client: controller, service: capture)
+
+    try await Task.sleep(for: .milliseconds(1))
+    let buffer = BufferWrapper.init(buffer: "Dummy", typeHint: .data(class: "String"))
+
+    capture.buffer$.send(buffer)
+    try await Task.sleep(for: .milliseconds(1))
+
+    let buffers = await controller.actor.buffers
+    #expect(buffers.count == 0)
+    print(sut)
+  }
+
+  @Test
   func unbindOnCaptureStatusChannelClose() async throws {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
@@ -143,7 +179,7 @@ struct CaptureServiceClientBindingTests {
       }
     }
     sut = await CaptureServiceClientBinding(client: controller, service: capture)
-    controller.status$.send(.ready)    
+    controller.status$.send(.ready)
     await completer.result()
     let updates = await controller.actor.updates
     received.update(updates)
