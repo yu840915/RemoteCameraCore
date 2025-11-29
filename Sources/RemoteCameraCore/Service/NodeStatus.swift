@@ -30,8 +30,9 @@ extension NodeStatus: CustomStringConvertible {
   }
 }
 
-struct NodeStatusMerger {
-  func merge(_ statuses: [NodeStatus]) -> NodeStatus {
+public struct NodeStatusMerger {
+  public init() {}
+  public func merge(_ statuses: [NodeStatus]) -> NodeStatus {
     statuses.first {
       if case .cancelled = $0 { true } else { false }
     } ?? statuses.first {

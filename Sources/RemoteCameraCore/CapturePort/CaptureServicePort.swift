@@ -1,4 +1,4 @@
-import Combine
+@preconcurrency import Combine
 
 public protocol CaptureServicePort: StateServicePort, AnyObject
 where
@@ -6,7 +6,7 @@ where
   Event == CaptureServiceEvent,
   Command == CaptureServiceCommand
 {
-  var onCapturedBuffer: any Publisher<BufferWrapper, Never> { get }
+  var onCapturedBuffer: AnyPublisher<BufferWrapper, Never> { get }
 }
 
 public struct CaptureServiceCoders {

@@ -1,14 +1,12 @@
 import AsyncUtils
-import Combine
+@preconcurrency import Combine
 
 public actor CaptureServiceClientBinding {
   public typealias Service = CaptureServicePort
   public typealias Client = CaptureClientPort
   public let service: any Service
   public let client: any Client
-  public var onStatus: NonSendable<any Publisher<NodeStatus, Never>> {
-    NonSendable(status$)
-  }
+  public let onStatus: AnyPublisher<NodeStatus, Never>
   let completor: ThrowingCompleter<Void>
   private var isBound = true
   private let status$ = CurrentValueSubject<NodeStatus, Never>(.preparing)
@@ -21,6 +19,7 @@ public actor CaptureServiceClientBinding {
     self.client = client
     self.service = service
     completor = await ThrowingCompleter()
+    onStatus = status$.eraseToAnyPublisher()
     var bag = Set<AnyCancellable>()
     client.onStatus.sink { [weak self] _ in
       Task { [weak self] in

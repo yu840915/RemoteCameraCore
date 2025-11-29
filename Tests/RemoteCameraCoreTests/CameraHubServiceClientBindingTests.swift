@@ -1,5 +1,5 @@
 import AsyncUtils
-import Combine
+@preconcurrency import Combine
 import Testing
 
 @testable import RemoteCameraCore
@@ -229,7 +229,7 @@ struct CameraHubServiceClientBindingTests {
     let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
     var values = [NodeStatus]()
     var bag = Set<AnyCancellable>()
-    (await sut.onStatus).nonSendable.sink { status in
+    await sut.onStatus.sink { status in
       values.append(status)
       if case .ready = status {
         Task {

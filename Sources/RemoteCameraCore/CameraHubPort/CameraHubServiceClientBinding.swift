@@ -1,14 +1,13 @@
 import AsyncUtils
-import Combine
+@preconcurrency import Combine
 
 public actor CameraHubServiceClientBinding {
   public typealias Service = CameraHubServicePort
   public typealias Client = CameraHubClientPort
   typealias StatusChannelCompletion = Subscribers.Completion<Never>
   private let status$: CurrentValueSubject<NodeStatus, Never>
-  var onStatus: NonSendable<any Publisher<NodeStatus, Never>> {
-    NonSendable(status$)
-  }
+  let onStatus: AnyPublisher<NodeStatus, Never>
+
   let service: any Service
   let client: any Client
   let completor: ThrowingCompleter<Void>
@@ -22,6 +21,7 @@ public actor CameraHubServiceClientBinding {
     self.service = service
     status$ = .init(.preparing)
     completor = await ThrowingCompleter()
+    onStatus = status$.eraseToAnyPublisher()
     var bag = Set<AnyCancellable>()
     service.onStatus.sink { [weak self] _ in
       Task { [weak self] in

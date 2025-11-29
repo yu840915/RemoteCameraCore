@@ -132,8 +132,8 @@ final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
 }
 
 final class DummyCapture: CaptureServicePort, @unchecked Sendable {
-  var onCapturedBuffer: any Publisher<BufferWrapper, Never> {
-    buffer$
+  var onCapturedBuffer: AnyPublisher<BufferWrapper, Never> {
+    buffer$.eraseToAnyPublisher()
   }
   var buffer$: PassthroughSubject<BufferWrapper, Never>
 
