@@ -1,28 +1,19 @@
 import AsyncUtils
-import Combine
+@preconcurrency import Combine
 
 actor CameraHubServerActor {
   final let localHub: any CameraHubServicePort
   final let advertiserFactory: any CameraHubAdvertiserFactoryPort
   private var advertiser: (any CameraHubAdvertisingServicePort)?
   private var adversiserBag: Set<AnyCancellable> = []
-  var statusStream: AsyncStream<NodeStatus> {
-    statusStreamWriter.stream
-  }
-  var stateStream: AsyncStream<CameraHubServerState> {
-    stateStreamPipe.stream
-  }
-  var eventStream: AsyncStream<CameraHubServerEvent> {
-    eventStreamWriter.stream
-  }
-  var errorStream: AsyncStream<Error> {
-    errorStreamWriter.stream
-  }
-  private let statusStreamWriter = AsyncStreamWriter<NodeStatus>()
-  private let eventStreamWriter = AsyncStreamWriter<CameraHubServerEvent>()
-  private let errorStreamWriter = AsyncStreamWriter<Error>()
-  private let stateStreamPipe: SubjectToAsyncStreamPipe<CameraHubServerState>
-  private let state$ = CurrentValueSubject<CameraHubServerState, Never>(.init())
+  private let state$: CurrentValueSubject<CameraHubServerState, Never>
+  private let status$: CurrentValueSubject<NodeStatus, Never>
+  private let event$: PassthroughSubject<CameraHubServerEvent, Never>
+  private let error$: PassthroughSubject<Error, Never>
+  let onState: AnyPublisher<CameraHubServerState, Never>
+  let onStatus: AnyPublisher<NodeStatus, Never>
+  let onEvent: AnyPublisher<CameraHubServerEvent, Never>
+  let onError: AnyPublisher<Error, Never>
   private var bindings: [CameraHubServiceClientBinding] = [] {
     didSet {
       var update = state$.value
@@ -39,7 +30,14 @@ actor CameraHubServerActor {
   ) async {
     self.localHub = localHub
     self.advertiserFactory = advertiserFactory
-    stateStreamPipe = SubjectToAsyncStreamPipe(state$)
+    state$ = .init(CameraHubServerState())
+    status$ = .init(.preparing)
+    event$ = .init()
+    error$ = .init()
+    onState = state$.eraseToAnyPublisher()
+    onStatus = status$.eraseToAnyPublisher()
+    onEvent = event$.eraseToAnyPublisher()
+    onError = error$.eraseToAnyPublisher()
     localHub.onStatus.sink { [weak self] _ in
       Task { [weak self] in
         await self?.onHubStatusCompletion()
@@ -106,7 +104,7 @@ extension CameraHubServerActor {
     var update = state$.value
     update.isAdvertising = state.isRunning
     update.requests = state.requests
-    state$.value = update
+    state$.send(update)
   }
 
   fileprivate func onAdvertiserEvent(_ event: CameraHubAdvertisingServiceEvent) async {
@@ -121,15 +119,15 @@ extension CameraHubServerActor {
   }
 
   fileprivate func handleHubStatus(_ status: NodeStatus) async {
-    statusStreamWriter.send(status)
+    status$.send(status)
     if case .cancelled = status {
-      statusStreamWriter.finish()
+      status$.send(completion: .finished)
     }
   }
 
   fileprivate func onHubStatusCompletion() {
-    statusStreamWriter.send(.cancelled(nil))
-    statusStreamWriter.finish()
+    status$.send(.cancelled(nil))
+    status$.send(completion: .finished)
   }
 
   fileprivate func onAdvertiserStatus(_ status: NodeStatus) {
@@ -139,7 +137,7 @@ extension CameraHubServerActor {
   }
 
   fileprivate func onAdvertiserStatusCompletion() {
-    eventStreamWriter.send(.advertiserStopped(nil))
+    event$.send(.advertiserStopped(nil))
     removeAdvertiser()
   }
 
@@ -147,7 +145,7 @@ extension CameraHubServerActor {
     do {
       try await binding.waitUnbound()
     } catch {
-      errorStreamWriter.send(error)
+      error$.send(error)
     }
     remove(binding)
   }
