@@ -8,12 +8,11 @@ public final class CameraHubServer: StateServicePort {
   private let actor: CameraHubServerActor
   private let state$: CurrentValueSubject<CameraHubServerState, Never>
   private let pipes: [StreamPipe]
-  public let onStatus: any Publisher<NodeStatus, Never>
+  public let onStatus: AnyPublisher<NodeStatus, Never>
   public var state: CameraHubServerState { state$.value }
-  public let onState: any Publisher<CameraHubServerState, Never>
-  public let onEvent: any Publisher<CameraHubServerEvent, Never>
-  public let onError: any Publisher<Error, Never>
-
+  public let onState: AnyPublisher<CameraHubServerState, Never>
+  public let onEvent: AnyPublisher<CameraHubServerEvent, Never>
+  public let onError: AnyPublisher<Error, Never>
   public init(
     localHub: some CameraHubServicePort,
     advertiserFactory: some CameraHubAdvertiserFactoryPort

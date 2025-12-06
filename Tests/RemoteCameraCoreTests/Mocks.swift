@@ -21,20 +21,20 @@ final class DummyAdvertiser: CameraHubAdvertisingServicePort, @unchecked Sendabl
   var state$: CurrentValueSubject<CameraHubAdvertisingServiceState, Never>
   var event$: PassthroughSubject<CameraHubAdvertisingServiceEvent, Never>
   var error$: PassthroughSubject<Error, Never>
-  var onStatus: any Publisher<NodeStatus, Never> {
-    status$
+  var onStatus: AnyPublisher<NodeStatus, Never> {
+    status$.eraseToAnyPublisher()
   }
   var state: CameraHubAdvertisingServiceState {
     state$.value
   }
-  var onState: any Publisher<CameraHubAdvertisingServiceState, Never> {
-    state$
+  var onState: AnyPublisher<CameraHubAdvertisingServiceState, Never> {
+    state$.eraseToAnyPublisher()
   }
-  var onEvent: any Publisher<CameraHubAdvertisingServiceEvent, Never> {
-    event$
+  var onEvent: AnyPublisher<CameraHubAdvertisingServiceEvent, Never> {
+    event$.eraseToAnyPublisher()
   }
-  var onError: any Publisher<Error, Never> {
-    error$
+  var onError: AnyPublisher<Error, Never> {
+    error$.eraseToAnyPublisher()
   }
   var commands: [CameraHubAdvertisingServiceCommand] = []
   let hub: CameraHubDescriptor
@@ -56,14 +56,14 @@ final class DummyHubController: CameraHubClientPort, @unchecked Sendable {
   var status$: CurrentValueSubject<NodeStatus, Never>
   var command$: PassthroughSubject<CameraHubCommand, Never>
   var error$: PassthroughSubject<Error, Never>
-  var onStatus: any Publisher<NodeStatus, Never> {
-    status$
+  var onStatus: AnyPublisher<NodeStatus, Never> {
+    status$.eraseToAnyPublisher()
   }
-  var onCommand: any Publisher<CameraHubCommand, Never> {
-    command$
+  var onCommand: AnyPublisher<CameraHubCommand, Never> {
+    command$.eraseToAnyPublisher()
   }
-  var onError: any Publisher<Error, Never> {
-    error$
+  var onError: AnyPublisher<Error, Never> {
+    error$.eraseToAnyPublisher()
   }
   let actor = ClientPortActor<
     CameraHubState,
@@ -101,20 +101,20 @@ final class DummyCameraHub: CameraHubServicePort, @unchecked Sendable {
   var state$: CurrentValueSubject<CameraHubState, Never>
   var event$: PassthroughSubject<CameraHubEvent, Never>
   var error$: PassthroughSubject<Error, Never>
-  var onStatus: any Publisher<NodeStatus, Never> {
-    status$
+  var onStatus: AnyPublisher<NodeStatus, Never> {
+    status$.eraseToAnyPublisher()
   }
   var state: CameraHubState {
     state$.value
   }
-  var onState: any Publisher<CameraHubState, Never> {
-    state$
+  var onState: AnyPublisher<CameraHubState, Never> {
+    state$.eraseToAnyPublisher()
   }
-  var onEvent: any Publisher<CameraHubEvent, Never> {
-    event$
+  var onEvent: AnyPublisher<CameraHubEvent, Never> {
+    event$.eraseToAnyPublisher()
   }
-  var onError: any Publisher<Error, Never> {
-    error$
+  var onError: AnyPublisher<Error, Never> {
+    error$.eraseToAnyPublisher()
   }
   var commands: [CameraHubCommand] = []
 
@@ -144,17 +144,17 @@ final class DummyCapture: CaptureServicePort, @unchecked Sendable {
   var state: CaptureServiceState {
     state$.value
   }
-  var onStatus: any Publisher<NodeStatus, Never> {
-    status$
+  var onStatus: AnyPublisher<NodeStatus, Never> {
+    status$.eraseToAnyPublisher()
   }
-  var onState: any Publisher<CaptureServiceState, Never> {
-    state$
+  var onState: AnyPublisher<CaptureServiceState, Never> {
+    state$.eraseToAnyPublisher()
   }
-  var onEvent: any Publisher<CaptureServiceEvent, Never> {
-    event$
+  var onEvent: AnyPublisher<CaptureServiceEvent, Never> {
+    event$.eraseToAnyPublisher()
   }
-  var onError: any Publisher<Error, Never> {
-    error$
+  var onError: AnyPublisher<Error, Never> {
+    error$.eraseToAnyPublisher()
   }
   var commands: [CaptureServiceCommand] = []
 
@@ -175,14 +175,14 @@ final class DummyCaptureController: CaptureClientPort, @unchecked Sendable {
   var status$: CurrentValueSubject<NodeStatus, Never>
   var command$: PassthroughSubject<CaptureServiceCommand, Never>
   var error$: PassthroughSubject<Error, Never>
-  var onStatus: any Publisher<NodeStatus, Never> {
-    status$
+  var onStatus: AnyPublisher<NodeStatus, Never> {
+    status$.eraseToAnyPublisher()
   }
-  var onCommand: any Publisher<CaptureServiceCommand, Never> {
-    command$
+  var onCommand: AnyPublisher<CaptureServiceCommand, Never> {
+    command$.eraseToAnyPublisher()
   }
-  var onError: any Publisher<Error, Never> {
-    error$
+  var onError: AnyPublisher<Error, Never> {
+    error$.eraseToAnyPublisher()
   }
   let actor = ClientPortActor<
     CaptureServiceStateUpdateMessage,

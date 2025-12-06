@@ -4,10 +4,10 @@ public protocol EventServiceClientPort: Sendable {
   associatedtype Event: Sendable
   associatedtype Command: Sendable
 
-  var onStatus: any Publisher<NodeStatus, Never> { get }
+  var onStatus: AnyPublisher<NodeStatus, Never> { get }
 
-  var onCommand: any Publisher<Command, Never> { get }
-  var onError: any Publisher<Error, Never> { get }
+  var onCommand: AnyPublisher<Command, Never> { get }
+  var onError: AnyPublisher<Error, Never> { get }
   func notify(_ event: Event) async
   func report(_ error: Error) async
   func unbind(_ error: Error?) async
