@@ -20,8 +20,8 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            name: "AsyncUtils",
-            path: "file:///Users/lixuanyu/swift_proj.nosync/AsyncUtils"
+            url: "https://github.com/yu840915/AsyncUtils.git",
+            branch: "main",
         )
     ],
     targets: [
