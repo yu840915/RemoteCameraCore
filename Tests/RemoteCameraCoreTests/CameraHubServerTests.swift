@@ -4,6 +4,12 @@ import Testing
 
 @testable import RemoteCameraCore
 
+public struct FakeConnectionSuite: ConnectionArgumentProviding {
+  public static let id = "fake-connection-suite"
+
+  public init() {}
+}
+
 struct CameraHubServerTests {
   @Test
   func createAdvertiserOnStart() async throws {
@@ -87,8 +93,8 @@ struct CameraHubServerTests {
         controller: .init(id: "controller-1", name: "Controller 1"),
         hub: .init(id: "hub-1", name: "Hub 1"),
         connectionSuite: ConnectionSuite(
-          id: QUICOverAWDLInfo.id,
-          arguments: QUICOverAWDLInfo(port: 1234),
+          id: FakeConnectionSuite.id,
+          arguments: FakeConnectionSuite(),
         ),
       )
     ]
@@ -111,8 +117,8 @@ struct CameraHubServerTests {
                 controller: CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
                 hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1"),
                 connectionSuite: ConnectionSuite(
-                  id: QUICOverAWDLInfo.id,
-                  arguments: QUICOverAWDLInfo(port: 1234),
+                  id: FakeConnectionSuite.id,
+                  arguments: FakeConnectionSuite(),
                 ),
               )
             ],
@@ -151,8 +157,8 @@ struct CameraHubServerTests {
         controller: .init(id: "controller-1", name: "Controller 1"),
         hub: .init(id: "hub-1", name: "Hub 1"),
         connectionSuite: ConnectionSuite(
-          id: QUICOverAWDLInfo.id,
-          arguments: QUICOverAWDLInfo(port: 1234),
+          id: FakeConnectionSuite.id,
+          arguments: FakeConnectionSuite(),
         ),
       )
     ]
@@ -207,8 +213,8 @@ struct CameraHubServerTests {
       controller: CameraControllerDescriptor(id: "controller-1", name: "Controller 1"),
       hub: CameraHubDescriptor(id: "hub-1", name: "Hub 1"),
       connectionSuite: ConnectionSuite(
-        id: QUICOverAWDLInfo.id,
-        arguments: QUICOverAWDLInfo(port: 1234),
+        id: FakeConnectionSuite.id,
+        arguments: FakeConnectionSuite(),
       ),
     )
 
@@ -220,7 +226,7 @@ struct CameraHubServerTests {
     try await server.perform(.acceptRequest(request: request))
     try await Task.sleep(for: .milliseconds(1))
 
-    guard case let .acceptRequest(accepted) = advertiser.commands.last else {
+    guard case .acceptRequest(let accepted) = advertiser.commands.last else {
       throw TestError.conditionFailed
     }
     #expect(accepted == request)
@@ -440,8 +446,8 @@ struct CameraHubServerTests {
         controller: .init(id: "controller-1", name: "Controller 1"),
         hub: .init(id: "hub-1", name: "Hub 1"),
         connectionSuite: ConnectionSuite(
-          id: QUICOverAWDLInfo.id,
-          arguments: QUICOverAWDLInfo(port: 1234),
+          id: FakeConnectionSuite.id,
+          arguments: FakeConnectionSuite(),
         ),
       )
     ]

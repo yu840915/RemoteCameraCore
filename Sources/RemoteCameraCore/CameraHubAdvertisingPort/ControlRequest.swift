@@ -14,21 +14,6 @@ public struct ControlRequest: Sendable, Equatable {
   }
 }
 
-extension ControlRequest {
-  public init(
-    controller: CameraControllerDescriptor,
-    hub: CameraHubDescriptor,
-    quicOverAWDLInfo: QUICOverAWDLInfo
-  ) {
-    self.controller = controller
-    self.hub = hub
-    self.connectionSuite = .init(
-      id: QUICOverAWDLInfo.id,
-      arguments: quicOverAWDLInfo
-    )
-  }
-}
-
 extension ControlRequest: CustomStringConvertible {
   public var description: String {
     "ControlRequest(controller: \(controller), hub: \(hub))"

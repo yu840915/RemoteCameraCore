@@ -33,11 +33,3 @@ extension ConnectionSuite: CustomStringConvertible {
   }
 }
 
-public struct QUICOverAWDLInfo: ConnectionArgumentProviding {
-  public static let id = "quic-over-awdl"
-  public let port: Int
-
-  public init(port: Int) {
-    self.port = port
-  }
-}
