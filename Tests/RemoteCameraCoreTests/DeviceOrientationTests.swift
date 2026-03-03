@@ -122,4 +122,49 @@ struct DeviceOrientationTests {
 
     #expect(sut.heading == heading)
   }
+
+  @Test
+  func forwardIsOppositeToBackward() async throws {
+    #expect(DeviceOrientation.virtualForward.heading == 0)
+    #expect(DeviceOrientation.virtualBackward.heading == 0)
+    #expect(DeviceOrientation.virtualForward.pitch == 0)
+    #expect(DeviceOrientation.virtualBackward.pitch == 0)
+    #expect(
+      DeviceOrientation.virtualForward.isArroximatelyOpposite(to: DeviceOrientation.virtualBackward)
+    )
+  }
+
+  @Test(
+    nil,
+    arguments: [
+      0,
+      Double.pi / 4,
+      Double.pi / 2,
+      0.001,
+      Double.pi,
+      3 * Double.pi / 2,
+    ]
+  )
+  func virtualForwardNeverBeOppositeToPhysical(heading: Double) async throws {
+    let sut = DeviceOrientation(heading: heading, pitch: 0)
+
+    #expect(!DeviceOrientation.virtualForward.isArroximatelyOpposite(to: sut))
+  }
+
+  @Test(
+    nil,
+    arguments: [
+      0,
+      Double.pi / 4,
+      Double.pi / 2,
+      0.001,
+      Double.pi,
+      3 * Double.pi / 2,
+    ]
+  )
+  func virtualBackwardNeverBeOppositeToPhysical(heading: Double) async throws {
+    let sut = DeviceOrientation(heading: heading, pitch: 0)
+
+    #expect(!DeviceOrientation.virtualBackward.isArroximatelyOpposite(to: sut))
+  }
 }

@@ -1,14 +1,27 @@
 public struct DeviceOrientation: Sendable, Equatable {
   // in radians, 0 is east, counterclockwise, e.g. west is pi
-  public var heading: Double
+  public let heading: Double
   /// device tilt, in radians, 0 facing forward, pi/2 facing up, -pi/2 facing down, e.g. horizon is 0, sky is pi/2, ground is -pi/2
   /// -pi/2 to pi/2
-  public var pitch: Double
+  public let pitch: Double
+  private let type: Type
+
+  public static let virtualForward = DeviceOrientation(type: .virtualForward)
+  public static let virtualBackward = DeviceOrientation(type: .virtualBackward)
 
   public init(
     heading: Double = 0,
     pitch: Double = 0,
   ) {
+    self.init(heading: heading, pitch: pitch, type: .physical)
+  }
+
+  init(
+    heading: Double = 0,
+    pitch: Double = 0,
+    type: Type
+  ) {
+    self.type = type
     let yaw = heading.truncatingRemainder(dividingBy: 2 * .pi)
     self.heading = yaw >= 0 ? yaw : yaw + 2 * .pi
     var p = pitch.truncatingRemainder(dividingBy: 2 * .pi)
@@ -35,6 +48,12 @@ public struct DeviceOrientation: Sendable, Equatable {
     headingThreshold: Double = .pi / 2,
     pitchThreshold: Double = 2 * .pi / 3,
   ) -> Bool {
+    guard type == .physical && other.type == .physical else {
+      if type == .physical || other.type == .physical {
+        return false
+      }
+      return type != other.type
+    }
     let pitchAngle = min(abs(pitch - other.pitch), abs(other.pitch - pitch))
     if pitchAngle > pitchThreshold {
       return true
@@ -45,5 +64,13 @@ public struct DeviceOrientation: Sendable, Equatable {
 
   public var opposite: DeviceOrientation {
     DeviceOrientation(heading: heading + .pi, pitch: -pitch)
+  }
+}
+
+extension DeviceOrientation {
+  enum `Type`: Sendable {
+    case physical
+    case virtualForward
+    case virtualBackward
   }
 }
