@@ -1,4 +1,4 @@
-public enum ImageOrientation: Int, Sendable {
+public enum ImageOrientation: UInt8, Sendable {
   case top = 1
   case topMirrored = 2
   case bottom = 3
@@ -25,7 +25,9 @@ public enum ImageOrientation: Int, Sendable {
     }
   }
 
-  public func displayDimensions(for dimensions: (width: Int, height: Int)) -> (width: Int, height: Int) {
+  public func displayDimensions(for dimensions: (width: Int, height: Int)) -> (
+    width: Int, height: Int
+  ) {
     switch self {
     case .top, .topMirrored, .bottom, .bottomMirrored:
       dimensions
