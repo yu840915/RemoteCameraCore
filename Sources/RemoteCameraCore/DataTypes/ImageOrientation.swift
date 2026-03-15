@@ -15,6 +15,19 @@ public enum ImageOrientation: UInt8, Sendable {
     }
   }
 
+  public func mirrored() -> ImageOrientation {
+    switch self {
+    case .top: .topMirrored
+    case .topMirrored: .top
+    case .bottom: .bottomMirrored
+    case .bottomMirrored: .bottom
+    case .left: .leftMirrored
+    case .leftMirrored: .left
+    case .right: .rightMirrored
+    case .rightMirrored: .right
+    }
+  }
+
   ///Note: in radians
   public var rotation: Double {
     switch self {
@@ -33,6 +46,45 @@ public enum ImageOrientation: UInt8, Sendable {
       dimensions
     case .left, .leftMirrored, .right, .rightMirrored:
       (width: dimensions.height, height: dimensions.width)
+    }
+  }
+
+  public func rotateClockwise() -> ImageOrientation {
+    switch self {
+    case .top: .right
+    case .right: .bottom
+    case .bottom: .left
+    case .left: .top
+    case .topMirrored: .rightMirrored
+    case .rightMirrored: .bottomMirrored
+    case .bottomMirrored: .leftMirrored
+    case .leftMirrored: .topMirrored
+    }
+  }
+
+  public func rotateCounterClockwise() -> ImageOrientation {
+    switch self {
+    case .top: .left
+    case .right: .top
+    case .bottom: .right
+    case .left: .bottom
+    case .topMirrored: .leftMirrored
+    case .rightMirrored: .topMirrored
+    case .bottomMirrored: .rightMirrored
+    case .leftMirrored: .bottomMirrored
+    }
+  }
+
+  public func rotate180() -> ImageOrientation {
+    switch self {
+    case .top: .bottom
+    case .right: .left
+    case .bottom: .top
+    case .left: .right
+    case .topMirrored: .bottomMirrored
+    case .rightMirrored: .leftMirrored
+    case .bottomMirrored: .topMirrored
+    case .leftMirrored: .rightMirrored
     }
   }
 }
