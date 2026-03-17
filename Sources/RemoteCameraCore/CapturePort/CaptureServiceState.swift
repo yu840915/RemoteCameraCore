@@ -2,6 +2,9 @@ public struct CaptureServiceState: Sendable, Equatable {
   public var camera: CameraDescriptor?
   public var configuration = CameraConfiguration()
   public var capabilities = CameraCapabilities()
+  public var availableCommands: CaptureServiceCommand.FeatureTable =
+    CaptureServiceCommand
+    .FeatureTable()
   public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
     .FeatureTable()
   public var captureTasks: [CaptureTaskInfo] = []
@@ -9,6 +12,7 @@ public struct CaptureServiceState: Sendable, Equatable {
   public init() {}
 
 }
+
 extension CaptureServiceState: CommandAvailabilityChecking {
   public func canPerform(
     _ command: CaptureServiceCommand.ConfigurationCommand

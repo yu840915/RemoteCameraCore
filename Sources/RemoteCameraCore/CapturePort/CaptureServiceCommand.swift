@@ -3,10 +3,23 @@ public enum CaptureServiceCommand: Sendable {
   case stop
   case capturePhoto(TaskSchedule)
   case cancelCapture(taskId: String)
-  case startRecording(RecordingArguments)
+  case startVideoRecording(VideoRecordingArguments)
+  case startTimelapseRecording(TimelapseRecordingArguments)
   case stopRecording(taskId: String)
   case switchCamera(cameraID: String)
   case configure(commands: [ConfigurationCommand])
+
+  public struct FeatureTable: Sendable, Equatable {
+    public var capturePhoto = false
+    public var cancelCapture = false
+    public var startVideoRecording = false
+    public var startTimelapseRecording = false
+    public var stopRecording = false
+    public var switchCamera = false
+    public var configure = false
+
+    public init() {}
+  }
 }
 
 extension CaptureServiceCommand {
@@ -16,12 +29,19 @@ extension CaptureServiceCommand {
     case at(Timestamp)
   }
 
-  public struct RecordingArguments: Sendable {
-    public let type: RecordingTaskInfo.TaskType
+  public struct VideoRecordingArguments: Sendable {
     public let schedule: TaskSchedule
 
-    public init(type: RecordingTaskInfo.TaskType, schedule: TaskSchedule = .now) {
-      self.type = type
+    public init(schedule: TaskSchedule = .now) {
+      self.schedule = schedule
+    }
+  }
+  public struct TimelapseRecordingArguments: Sendable {
+    public let schedule: TaskSchedule
+    public let interval: Duration
+
+    public init(interval: Duration, schedule: TaskSchedule = .now) {
+      self.interval = interval
       self.schedule = schedule
     }
   }
