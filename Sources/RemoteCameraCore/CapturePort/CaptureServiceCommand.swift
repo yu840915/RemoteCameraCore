@@ -1,11 +1,31 @@
 public enum CaptureServiceCommand: Sendable {
   case start
   case stop
-  case takePicture
+  case capturePhoto(TaskSchedule)
+  case cancelCapture(taskId: String)
+  case startRecording(RecordingArguments)
+  case stopRecording(taskId: String)
   case switchCamera(cameraID: String)
   case configure(commands: [ConfigurationCommand])
 }
 
+extension CaptureServiceCommand {
+  public enum TaskSchedule: Sendable {
+    case now
+    case delayed(Duration)
+    case at(Timestamp)
+  }
+
+  public struct RecordingArguments: Sendable {
+    public let type: RecordingTaskInfo.TaskType
+    public let schedule: TaskSchedule
+
+    public init(type: RecordingTaskInfo.TaskType, schedule: TaskSchedule = .now) {
+      self.type = type
+      self.schedule = schedule
+    }
+  }
+}
 extension CaptureServiceCommand {
   public enum ConfigurationCommand: Sendable {
     case setLivePhoto(on: Bool)
