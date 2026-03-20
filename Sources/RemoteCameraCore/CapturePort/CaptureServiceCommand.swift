@@ -22,13 +22,13 @@ public enum CaptureServiceCommand: Sendable {
   }
 }
 
-extension CaptureServiceCommand {
-  public enum TaskSchedule: Sendable {
-    case now
-    case delayed(Duration)
-    case at(Timestamp)
-  }
+public enum TaskSchedule: Sendable {
+  case now
+  case delayed(Duration)
+  case at(Timestamp)
+}
 
+extension CaptureServiceCommand {
   public struct VideoRecordingArguments: Sendable {
     public let schedule: TaskSchedule
 
