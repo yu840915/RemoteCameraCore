@@ -2,15 +2,16 @@ public struct CaptureServiceState: Sendable, Equatable {
   public var camera: CameraDescriptor?
   public var configuration = CameraConfiguration()
   public var capabilities = CameraCapabilities()
+  public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
+    .FeatureTable()
   public var availableCommands: CaptureServiceCommand.FeatureTable =
     CaptureServiceCommand
     .FeatureTable()
-  public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
-    .FeatureTable()
+  public var availableModes = CaptureMode.FeatureTable()
   public var captureTasks: [CaptureTaskInfo] = []
   public var recordingTasks: [RecordingTaskInfo] = []
+  public var mode: CaptureMode = .monitor
   public init() {}
-
 }
 
 extension CaptureServiceState: CommandAvailabilityChecking {
@@ -84,8 +85,14 @@ extension CaptureServiceState {
       self.configuration = configuration
     case .capabilities(let capabilities):
       self.capabilities = capabilities
+    case .availableModes(let modes):
+      availableModes = modes
+    case .availableCommands(let commands):
+      availableCommands = commands
     case .availableConfigurationCommands(let commands):
       availableConfigurationCommands = commands
+    case .mode(let mode):
+      self.mode = mode
     }
   }
 }
@@ -138,14 +145,17 @@ public struct CameraCapabilities: Sendable, Equatable {
 
 public enum CaptureServiceStateUpdateMessage: Sendable {
   case cameraDescriptor(CameraDescriptor)
+  case availableModes(CaptureMode.FeatureTable)
   case configuration(CameraConfiguration)
   case capabilities(CameraCapabilities)
+  case availableCommands(CaptureServiceCommand.FeatureTable)
   case availableConfigurationCommands(CaptureServiceCommand.ConfigurationCommand.FeatureTable)
+  case mode(CaptureMode)
 }
 
 extension CaptureServiceState: CustomStringConvertible {
   public var description: String {
-    "CaptureServiceState(camera: \(camera.description), configuration: \(configuration.description), capabilities: \(capabilities.description), availableConfigurationCommands: \(availableConfigurationCommands.description))"
+    "CaptureServiceState(camera: \(camera.description), configuration: \(configuration.description), capabilities: \(capabilities.description), availableCommands: \(availableCommands), availableConfigurationCommands: \(availableConfigurationCommands), mode: \(mode))"
   }
 }
 
@@ -226,8 +236,14 @@ extension CaptureServiceStateUpdateMessage: CustomStringConvertible {
       "Configuration: \(configuration)"
     case .capabilities(let capabilities):
       "Capabilities: \(capabilities)"
+    case .availableModes(let modes):
+      "AvailableModes: \(modes)"
+    case .availableCommands(let commands):
+      "AvailableCommands: \(commands)"
     case .availableConfigurationCommands(let commands):
       "AvailableConfigurationCommands: \(commands)"
+    case .mode(let mode):
+      "Mode: \(mode)"
     }
   }
 }

@@ -8,6 +8,7 @@ public enum CaptureServiceCommand: Sendable {
   case stopRecording(taskId: String)
   case switchCamera(cameraID: String)
   case configure(commands: [ConfigurationCommand])
+  case setMode(mode: CaptureMode)
 
   public struct FeatureTable: Sendable, Equatable {
     public var capturePhoto = false
@@ -17,6 +18,7 @@ public enum CaptureServiceCommand: Sendable {
     public var stopRecording = false
     public var switchCamera = false
     public var configure = false
+    public var setMode = false
 
     public init() {}
   }
