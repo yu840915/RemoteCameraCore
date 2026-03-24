@@ -1,7 +1,7 @@
 public enum CaptureServiceCommand: Sendable {
   case start
   case stop
-  case capturePhoto(TaskSchedule)
+  case capturePhoto(PhotoCaptureArguments)
   case cancelCapture(taskId: String)
   case startVideoRecording(VideoRecordingArguments)
   case startTimelapseRecording(TimelapseRecordingArguments)
@@ -38,6 +38,15 @@ extension CaptureServiceCommand {
       self.schedule = schedule
     }
   }
+
+  public struct PhotoCaptureArguments: Sendable {
+    public let schedule: TaskSchedule
+
+    public init(schedule: TaskSchedule = .now) {
+      self.schedule = schedule
+    }
+  }
+
   public struct TimelapseRecordingArguments: Sendable {
     public let schedule: TaskSchedule
     public let interval: Duration

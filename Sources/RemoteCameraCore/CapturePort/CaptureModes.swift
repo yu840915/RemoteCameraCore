@@ -4,7 +4,7 @@ public enum CaptureMode: Sendable, Equatable {
   case photo
   case video
   case audio
-  case timeLapse
+  case timelapse
 }
 
 extension CaptureMode {
@@ -12,7 +12,7 @@ extension CaptureMode {
     public var photo = false
     public var video = false
     public var audio = false
-    public var timeLapse = false
+    public var timelapse = false
 
     public init() {}
   }
@@ -25,7 +25,7 @@ extension CaptureMode: CustomStringConvertible {
     case .photo: "Photo"
     case .video: "Video"
     case .audio: "Audio"
-    case .timeLapse: "TimeLapse"
+    case .timelapse: "TimeLapse"
     }
   }
 }
@@ -36,7 +36,7 @@ extension CaptureMode.FeatureTable: CustomStringConvertible {
     if photo { modes.append("Photo") }
     if video { modes.append("Video") }
     if audio { modes.append("Audio") }
-    if timeLapse { modes.append("TimeLapse") }
+    if timelapse { modes.append("Time-Lapse") }
     return "Available Modes: \(modes.joined(separator: ", "))"
   }
 }
