@@ -1,5 +1,6 @@
 public struct CaptureServiceState: Sendable, Equatable {
   public var camera: CameraDescriptor?
+  public var microphones: [MicrophoneDescriptor] = []
   public var configuration = CameraConfiguration()
   public var capabilities = CameraCapabilities()
   public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
@@ -81,6 +82,8 @@ extension CaptureServiceState {
     switch update {
     case .cameraDescriptor(let camera):
       self.camera = camera
+    case .microphoneDescriptors(let microphones):
+      self.microphones = microphones
     case .configuration(let configuration):
       self.configuration = configuration
     case .capabilities(let capabilities):
@@ -145,6 +148,7 @@ public struct CameraCapabilities: Sendable, Equatable {
 
 public enum CaptureServiceStateUpdateMessage: Sendable {
   case cameraDescriptor(CameraDescriptor)
+  case microphoneDescriptors([MicrophoneDescriptor])
   case availableModes(CaptureMode.FeatureTable)
   case configuration(CameraConfiguration)
   case capabilities(CameraCapabilities)
@@ -232,6 +236,8 @@ extension CaptureServiceStateUpdateMessage: CustomStringConvertible {
     switch self {
     case .cameraDescriptor(let camera):
       "CameraDescriptor: \(camera)"
+    case .microphoneDescriptors(let microphones):
+      "MicrophoneDescriptors: \(microphones)"
     case .configuration(let configuration):
       "Configuration: \(configuration)"
     case .capabilities(let capabilities):
