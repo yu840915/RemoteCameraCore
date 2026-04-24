@@ -6,6 +6,7 @@ public final class BufferWrapper: Sendable {
     case compressedAudioFrame(class: String)
     case audio(class: String)
     case data(class: String)
+    case video(class: String)
   }
 
   public let typeHint: TypeHint
