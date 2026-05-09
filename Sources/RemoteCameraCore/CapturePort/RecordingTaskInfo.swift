@@ -34,8 +34,10 @@ public struct VideoRecordingSettings: Sendable, Equatable {
 
 public struct TimeElapseRecordingSettings: Sendable, Equatable {
   public let interval: Duration
+  public let frameRate: Double
 
-  public init(interval: Duration) {
+  public init(interval: Duration, frameRate: Double) {
     self.interval = interval
+    self.frameRate = frameRate
   }
 }

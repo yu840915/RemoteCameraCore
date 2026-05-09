@@ -50,9 +50,11 @@ extension CaptureServiceCommand {
   public struct TimelapseRecordingArguments: Sendable {
     public let schedule: TaskSchedule
     public let interval: Duration
+    public let frameRate: Double
 
-    public init(interval: Duration, schedule: TaskSchedule = .now) {
+    public init(interval: Duration, frameRate: Double, schedule: TaskSchedule = .now) {
       self.interval = interval
+      self.frameRate = frameRate
       self.schedule = schedule
     }
   }
