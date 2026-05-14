@@ -19,6 +19,6 @@ public struct CameraHubState: Sendable, Equatable {
 
 extension CameraHubState: CustomStringConvertible {
   public var description: String {
-    "CameraHubState(id: \(id), name: \(name), cameras: \(cameras))"
+    "CameraHubState(id: \(id), name: \(name), cameras: \(cameras), microphones: \(microphones))"
   }
 }

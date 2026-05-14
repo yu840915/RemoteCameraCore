@@ -10,6 +10,6 @@ public struct MicrophoneDescriptor: Sendable, Equatable {
 
 extension MicrophoneDescriptor: CustomStringConvertible {
   public var description: String {
-    return "Camera(id: \(id), name: \(name)"
+    "Microphone(id: \(id), name: \(name) )"
   }
 }

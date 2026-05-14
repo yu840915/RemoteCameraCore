@@ -1,5 +1,5 @@
 public enum CaptureMode: Sendable, Equatable {
-  // Monitor is the default view only mode, void of capture capabilities.
+  // Monitor is the default view only mode, devoid of capture capabilities.
   case monitor
   case photo
   case video

@@ -20,7 +20,7 @@ public struct RecordingTaskInfo: Sendable, Equatable {
 extension RecordingTaskInfo {
   public enum TaskType: Sendable, Equatable {
     case video(VideoRecordingSettings)
-    case timeElapse(TimeElapseRecordingSettings)
+    case timelapse(TimelapseRecordingSettings)
   }
 }
 
@@ -32,7 +32,7 @@ public struct VideoRecordingSettings: Sendable, Equatable {
   }
 }
 
-public struct TimeElapseRecordingSettings: Sendable, Equatable {
+public struct TimelapseRecordingSettings: Sendable, Equatable {
   public let interval: Duration
   public let frameRate: Double
 

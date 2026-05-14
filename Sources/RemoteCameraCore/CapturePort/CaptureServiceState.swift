@@ -94,6 +94,10 @@ extension CaptureServiceState {
       availableCommands = commands
     case .availableConfigurationCommands(let commands):
       availableConfigurationCommands = commands
+    case .captureTasks(let tasks):
+      captureTasks = tasks
+    case .recordingTasks(let tasks):
+      recordingTasks = tasks
     case .mode(let mode):
       self.mode = mode
     }
@@ -154,6 +158,8 @@ public enum CaptureServiceStateUpdateMessage: Sendable {
   case capabilities(CameraCapabilities)
   case availableCommands(CaptureServiceCommand.FeatureTable)
   case availableConfigurationCommands(CaptureServiceCommand.ConfigurationCommand.FeatureTable)
+  case captureTasks([CaptureTaskInfo])
+  case recordingTasks([RecordingTaskInfo])
   case mode(CaptureMode)
 }
 
@@ -248,6 +254,10 @@ extension CaptureServiceStateUpdateMessage: CustomStringConvertible {
       "AvailableCommands: \(commands)"
     case .availableConfigurationCommands(let commands):
       "AvailableConfigurationCommands: \(commands)"
+    case .recordingTasks(let tasks):
+      "RecordingTasks: \(tasks)"
+    case .captureTasks(let tasks):
+      "CaptureTasks: \(tasks)"
     case .mode(let mode):
       "Mode: \(mode)"
     }
