@@ -3,8 +3,10 @@ public final class BufferWrapper: Sendable {
     case stillImage(class: String)
     case videoFrame(class: String)
     case compressedVideoFrame(class: String)
+    case compressedAudioFrame(class: String)
     case audio(class: String)
     case data(class: String)
+    case video(class: String)
   }
 
   public let typeHint: TypeHint

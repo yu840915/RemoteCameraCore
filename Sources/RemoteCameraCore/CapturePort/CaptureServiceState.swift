@@ -1,57 +1,65 @@
 public struct CaptureServiceState: Sendable, Equatable {
   public var camera: CameraDescriptor?
+  public var microphones: [MicrophoneDescriptor] = []
   public var configuration = CameraConfiguration()
   public var capabilities = CameraCapabilities()
   public var availableConfigurationCommands = CaptureServiceCommand.ConfigurationCommand
     .FeatureTable()
+  public var availableCommands: CaptureServiceCommand.FeatureTable =
+    CaptureServiceCommand
+    .FeatureTable()
+  public var availableModes = CaptureMode.FeatureTable()
+  public var captureTasks: [CaptureTaskInfo] = []
+  public var recordingTasks: [RecordingTaskInfo] = []
+  public var mode: CaptureMode = .monitor
   public init() {}
-
 }
+
 extension CaptureServiceState: CommandAvailabilityChecking {
   public func canPerform(
     _ command: CaptureServiceCommand.ConfigurationCommand
   ) -> Bool {
     switch command {
     case .setLivePhoto: availableConfigurationCommands.setLivePhoto
-    case let .setTorchMode(arg):
+    case .setTorchMode(let arg):
       availableConfigurationCommands.setTorchMode
         && capabilities.torchModes.contains(
           arg
         )
-    case let .setFlashMode(arg):
+    case .setFlashMode(let arg):
       availableConfigurationCommands.setFlashMode
         && capabilities.flashModes.contains(
           arg
         )
-    case let .setZoomFactor(arg):
+    case .setZoomFactor(let arg):
       availableConfigurationCommands.setZoomFactor
         && capabilities.zoomFactorRange?.contains(arg) ?? false
     case .smoothZoom: availableConfigurationCommands.smoothZoom
     case .setHDR: availableConfigurationCommands.setHDR
-    case let .setFocusMode(arg):
+    case .setFocusMode(let arg):
       availableConfigurationCommands.setFocusMode && capabilities.focusModes.contains(arg)
-    case let .setLensPosition(arg):
+    case .setLensPosition(let arg):
       availableConfigurationCommands.setLensPosition
         && capabilities.lensPositionRange?.contains(arg) ?? false
     case .setFocusPointOfInterest: availableConfigurationCommands.setFocusPointOfInterest
-    case let .setExposureMode(arg):
+    case .setExposureMode(let arg):
       availableConfigurationCommands.setExposureMode && capabilities.exposureModes.contains(arg)
     case .setExposurePointOfInterest: availableConfigurationCommands.setExposurePointOfInterest
-    case let .setExposureDuration(arg):
+    case .setExposureDuration(let arg):
       availableConfigurationCommands.setExposureDuration
         && capabilities.exposureDurationRange?.contains(arg) ?? false
-    case let .setISO(arf):
+    case .setISO(let arf):
       availableConfigurationCommands.setISO
         && capabilities.isoRange?.contains(arf) ?? false
-    case let .setWhiteBalanceMode(arg):
+    case .setWhiteBalanceMode(let arg):
       availableConfigurationCommands.setWhiteBalanceMode
         && capabilities.whiteBalanceModes.contains(arg)
-    case let .setTemperatureAndTint(arg):
+    case .setTemperatureAndTint(let arg):
       availableConfigurationCommands.setTemperatureAndTint
         && capabilities.whiteBalanceModes.contains(.locked)
         && capabilities.whiteBalanceTemperatureRange?.contains(arg.temperature) ?? false
         && capabilities.whiteBalanceTintRange?.contains(arg.tint) ?? false
-    case let .setWhiteBalanceGains(arg):
+    case .setWhiteBalanceGains(let arg):
       availableConfigurationCommands.setWhiteBalanceGains
         && capabilities.whiteBalanceRedGainsRange?.contains(arg.redGain) ?? false
         && capabilities.whiteBalanceGreenGainsRange?.contains(arg.greenGain) ?? false
@@ -72,14 +80,26 @@ extension CaptureServiceState {
 
   public mutating func update(_ update: CaptureServiceStateUpdateMessage) {
     switch update {
-    case let .cameraDescriptor(camera):
+    case .cameraDescriptor(let camera):
       self.camera = camera
-    case let .configuration(configuration):
+    case .microphoneDescriptors(let microphones):
+      self.microphones = microphones
+    case .configuration(let configuration):
       self.configuration = configuration
-    case let .capabilities(capabilities):
+    case .capabilities(let capabilities):
       self.capabilities = capabilities
-    case let .availableConfigurationCommands(commands):
+    case .availableModes(let modes):
+      availableModes = modes
+    case .availableCommands(let commands):
+      availableCommands = commands
+    case .availableConfigurationCommands(let commands):
       availableConfigurationCommands = commands
+    case .captureTasks(let tasks):
+      captureTasks = tasks
+    case .recordingTasks(let tasks):
+      recordingTasks = tasks
+    case .mode(let mode):
+      self.mode = mode
     }
   }
 }
@@ -132,14 +152,20 @@ public struct CameraCapabilities: Sendable, Equatable {
 
 public enum CaptureServiceStateUpdateMessage: Sendable {
   case cameraDescriptor(CameraDescriptor)
+  case microphoneDescriptors([MicrophoneDescriptor])
+  case availableModes(CaptureMode.FeatureTable)
   case configuration(CameraConfiguration)
   case capabilities(CameraCapabilities)
+  case availableCommands(CaptureServiceCommand.FeatureTable)
   case availableConfigurationCommands(CaptureServiceCommand.ConfigurationCommand.FeatureTable)
+  case captureTasks([CaptureTaskInfo])
+  case recordingTasks([RecordingTaskInfo])
+  case mode(CaptureMode)
 }
 
 extension CaptureServiceState: CustomStringConvertible {
   public var description: String {
-    "CaptureServiceState(camera: \(camera.description), configuration: \(configuration.description), capabilities: \(capabilities.description), availableConfigurationCommands: \(availableConfigurationCommands.description))"
+    "CaptureServiceState(camera: \(camera.description), configuration: \(configuration.description), capabilities: \(capabilities.description), availableCommands: \(availableCommands), availableConfigurationCommands: \(availableConfigurationCommands), mode: \(mode))"
   }
 }
 
@@ -214,14 +240,26 @@ extension CaptureServiceCommand.ConfigurationCommand
 extension CaptureServiceStateUpdateMessage: CustomStringConvertible {
   public var description: String {
     switch self {
-    case let .cameraDescriptor(camera):
+    case .cameraDescriptor(let camera):
       "CameraDescriptor: \(camera)"
-    case let .configuration(configuration):
+    case .microphoneDescriptors(let microphones):
+      "MicrophoneDescriptors: \(microphones)"
+    case .configuration(let configuration):
       "Configuration: \(configuration)"
-    case let .capabilities(capabilities):
+    case .capabilities(let capabilities):
       "Capabilities: \(capabilities)"
-    case let .availableConfigurationCommands(commands):
+    case .availableModes(let modes):
+      "AvailableModes: \(modes)"
+    case .availableCommands(let commands):
+      "AvailableCommands: \(commands)"
+    case .availableConfigurationCommands(let commands):
       "AvailableConfigurationCommands: \(commands)"
+    case .recordingTasks(let tasks):
+      "RecordingTasks: \(tasks)"
+    case .captureTasks(let tasks):
+      "CaptureTasks: \(tasks)"
+    case .mode(let mode):
+      "Mode: \(mode)"
     }
   }
 }
@@ -231,7 +269,7 @@ where Wrapped: CustomStringConvertible {
   public var description: String {
     switch self {
     case .none: "nil"
-    case let .some(value): value.description
+    case .some(let value): value.description
     }
   }
 }

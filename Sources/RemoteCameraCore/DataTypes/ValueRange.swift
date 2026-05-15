@@ -13,7 +13,7 @@ public struct ValueRange<Bound: Comparable & Sendable>: Sendable {
 
   public init(checkedMin min: Bound, max: Bound) throws {
     guard min <= max else {
-      throw ValidationError.outOfRange
+      throw RemoteCameraCoreError.valueOutOfRange
     }
     self.min = min
     self.max = max
@@ -39,12 +39,6 @@ extension ValueRange where Bound == Double {
   public func proportionalValue(for value: Bound) -> Double {
     let value = clamp(value)
     return (value - min) / (max - min)
-  }
-}
-
-extension ValueRange {
-  public enum ValidationError: Int, Error {
-    case outOfRange = 1
   }
 }
 

@@ -1,11 +1,64 @@
 public enum CaptureServiceCommand: Sendable {
   case start
   case stop
-  case takePicture
+  case capturePhoto(PhotoCaptureArguments)
+  case cancelCapture(taskId: String)
+  case startVideoRecording(VideoRecordingArguments)
+  case startTimelapseRecording(TimelapseRecordingArguments)
+  case stopRecording(taskId: String)
   case switchCamera(cameraID: String)
   case configure(commands: [ConfigurationCommand])
+  case setMode(mode: CaptureMode)
+
+  public struct FeatureTable: Sendable, Equatable {
+    public var capturePhoto = false
+    public var cancelCapture = false
+    public var startVideoRecording = false
+    public var startTimelapseRecording = false
+    public var stopRecording = false
+    public var switchCamera = false
+    public var configure = false
+    public var setMode = false
+
+    public init() {}
+  }
 }
 
+public enum TaskSchedule: Sendable {
+  case now
+  case delayed(Duration)
+  case at(Timestamp)
+}
+
+extension CaptureServiceCommand {
+  public struct VideoRecordingArguments: Sendable {
+    public let schedule: TaskSchedule
+
+    public init(schedule: TaskSchedule = .now) {
+      self.schedule = schedule
+    }
+  }
+
+  public struct PhotoCaptureArguments: Sendable {
+    public let schedule: TaskSchedule
+
+    public init(schedule: TaskSchedule = .now) {
+      self.schedule = schedule
+    }
+  }
+
+  public struct TimelapseRecordingArguments: Sendable {
+    public let schedule: TaskSchedule
+    public let interval: Duration
+    public let frameRate: Double
+
+    public init(interval: Duration, frameRate: Double, schedule: TaskSchedule = .now) {
+      self.interval = interval
+      self.frameRate = frameRate
+      self.schedule = schedule
+    }
+  }
+}
 extension CaptureServiceCommand {
   public enum ConfigurationCommand: Sendable {
     case setLivePhoto(on: Bool)
