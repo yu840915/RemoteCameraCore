@@ -136,6 +136,22 @@ extension CaptureServiceClientBinding {
     if let camera = state.camera, camera != lastState.camera {
       messages.append(.cameraDescriptor(camera))
     }
+    if state.microphones != lastState.microphones {
+      messages.append(.microphoneDescriptors(state.microphones))
+    }
+    if let camera = state.camera, camera != lastState.camera {
+      messages.append(.cameraDescriptor(camera))
+    }
+    if state.captureTasks != lastState.captureTasks {
+      messages.append(.captureTasks(state.captureTasks))
+    }
+    if state.recordingTasks != lastState.recordingTasks {
+      messages.append(.recordingTasks(state.recordingTasks))
+    }
+    if state.mode != lastState.mode {
+      messages.append(.mode(state.mode))
+    }
+
     lastState = state
     await withTaskGroup(of: Void.self) { [weak self] group in
       for message in messages {
