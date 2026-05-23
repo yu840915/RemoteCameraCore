@@ -33,12 +33,20 @@ extension ValueRange where Bound: SignedInteger {
     let value = clamp(value)
     return Double(value - min) / Double(max - min)
   }
+
+  public func value(forProportionalValue proportionalValue: Double) -> Bound {
+    clamp(min + Bound(proportionalValue * Double(max - min)))
+  }
 }
 
 extension ValueRange where Bound == Double {
   public func proportionalValue(for value: Bound) -> Double {
     let value = clamp(value)
     return (value - min) / (max - min)
+  }
+
+  public func value(forProportionalValue proportionalValue: Double) -> Bound {
+    clamp(min + proportionalValue * (max - min))
   }
 }
 
