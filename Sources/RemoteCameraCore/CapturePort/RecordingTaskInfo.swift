@@ -25,19 +25,63 @@ extension RecordingTaskInfo {
 }
 
 public struct VideoRecordingSettings: Sendable, Equatable {
-  public let frameRate: Double
+  public var frameRate: Double {
+    if frameDuration > .zero {
+      return 1.0 / frameDuration.doubleValue
+    } else {
+      return .zero
+    }
+  }
+  public let frameDuration: Duration
 
   public init(frameRate: Double) {
-    self.frameRate = frameRate
+    if frameRate > 0 {
+      self.frameDuration = Duration(1.0 / frameRate)
+    } else {
+      self.frameDuration = .zero
+    }
+  }
+
+  public init(frameDuration: Duration) {
+    self.frameDuration = frameDuration
   }
 }
 
 public struct TimelapseRecordingSettings: Sendable, Equatable {
   public let interval: Duration
-  public let frameRate: Double
+  public var frameDuration: Duration {
+    videoRecordingSettings.frameDuration
+  }
+  public var frameRate: Double {
+    videoRecordingSettings.frameRate
+  }
+  private let videoRecordingSettings: VideoRecordingSettings
 
   public init(interval: Duration, frameRate: Double) {
-    self.interval = interval
-    self.frameRate = frameRate
+    self.init(
+      interval: interval,
+      videoRecordingSettings: VideoRecordingSettings(frameRate: frameRate),
+    )
   }
+
+  public init(interval: Duration, frameDuration: Duration) {
+    self.init(
+      interval: interval,
+      videoRecordingSettings: VideoRecordingSettings(frameDuration: frameDuration),
+    )
+  }
+
+  init(interval: Duration, videoRecordingSettings: VideoRecordingSettings) {
+    self.videoRecordingSettings = videoRecordingSettings
+    self.interval = max(interval, videoRecordingSettings.frameDuration)
+  }
+
+  public func estimateTimeLapseDuration(from recordingDuration: Duration) -> Duration {
+    guard recordingDuration > .zero && interval > .zero else {
+      return .zero
+    }
+    let frameCount = (recordingDuration / interval).rounded(.down)
+    return frameDuration * Int(frameCount + 1)
+  }
+
 }
