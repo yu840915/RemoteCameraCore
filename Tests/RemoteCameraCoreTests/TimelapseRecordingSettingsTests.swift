@@ -5,8 +5,8 @@ struct TimelapseRecordingSettingsTests {
 
   @Test(
     arguments: zip(
-      [Duration.seconds(0.1), Duration.seconds(1), .zero, Duration.seconds(-1)],
-      [10.0, 1.0, 0.0, 0.0],
+      [Duration.seconds(0.1), Duration.seconds(1)],
+      [10.0, 1.0],
     ),
   )
   func estimateFrameRateFromFrameDuration(
@@ -20,18 +20,18 @@ struct TimelapseRecordingSettingsTests {
       frameDuration: frameDuration,
     )
 
-    #expect(sut.frameRate == frameRate)
+    #expect(abs(sut.frameRate - frameRate) <= 1e-9)
   }
 
   @Test(
     arguments: zip(
       [
-        Duration.seconds(10), Duration.seconds(55), Duration.seconds(60), .zero,
-        Duration.seconds(1), Duration.seconds(-1),
+        Duration.seconds(10), Duration.seconds(55), Duration.seconds(60),
+        Duration.seconds(1),
       ],
       [
-        Duration.seconds(0.2), Duration.seconds(0.6), Duration.seconds(0.7), .zero,
-        Duration.seconds(0.1), .zero,
+        Duration.milliseconds(200), Duration.milliseconds(600), Duration.milliseconds(700),
+        Duration.milliseconds(100),
       ],
     ),
   )
@@ -43,7 +43,7 @@ struct TimelapseRecordingSettingsTests {
   {
     let sut = TimelapseRecordingSettings(
       interval: .seconds(10),
-      frameDuration: Duration.seconds(0.1),
+      frameDuration: Duration.milliseconds(100),
     )
 
     #expect(sut.estimateTimeLapseDuration(from: recordingDuration) == tsDuration)
@@ -52,10 +52,10 @@ struct TimelapseRecordingSettingsTests {
   @Test
   func intervalMustNotBeLessThanFrameDuration() async throws {
     let sut = TimelapseRecordingSettings(
-      interval: Duration.seconds(0.1),
-      frameDuration: Duration.seconds(0.2),
+      interval: Duration.milliseconds(100),
+      frameDuration: Duration.milliseconds(200),
     )
 
-    #expect(sut.interval == Duration.seconds(0.2))
+    #expect(sut.interval == Duration.milliseconds(200))
   }
 }

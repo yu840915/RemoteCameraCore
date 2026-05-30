@@ -43,6 +43,7 @@ public struct VideoRecordingSettings: Sendable, Equatable {
   }
 
   public init(frameDuration: Duration) {
+    precondition(frameDuration > .zero, "Frame duration must be positive")
     self.frameDuration = frameDuration
   }
 }

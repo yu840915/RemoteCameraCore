@@ -4,8 +4,8 @@ import Testing
 struct VideoRecordingSettingsTests {
   @Test(
     arguments: zip(
-      [Duration.seconds(0.1), Duration.seconds(1), .zero, Duration.seconds(-1)],
-      [10.0, 1.0, 0.0, 0.0],
+      [Duration.seconds(0.1), Duration.seconds(1)],
+      [10.0, 1.0],
     ),
   )
   func estimateFrameRateFromFrameDuration(
@@ -16,13 +16,13 @@ struct VideoRecordingSettingsTests {
   {
     let settings = VideoRecordingSettings(frameDuration: frameDuration)
 
-    #expect(settings.frameRate == frameRate)
+    #expect(abs(settings.frameRate - frameRate) <= 1e-9)
   }
 
   @Test(
     arguments: zip(
       [10.0, 1.0, 0.0, -1.0],
-      [Duration.seconds(0.1), Duration.seconds(1), .zero, .zero],
+      [Duration.milliseconds(100), Duration.seconds(1), .zero, .zero],
     ),
   )
   func initWithFrameRate(
