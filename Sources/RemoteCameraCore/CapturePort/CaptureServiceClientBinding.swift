@@ -125,6 +125,12 @@ extension CaptureServiceClientBinding {
     if state.capabilities != lastState.capabilities {
       messages.append(.capabilities(state.capabilities))
     }
+    if state.availableModes != lastState.availableModes {
+      messages.append(.availableModes(state.availableModes))
+    }
+    if state.availableCommands != lastState.availableCommands {
+      messages.append(.availableCommands(state.availableCommands))
+    }
     if state.availableConfigurationCommands != lastState.availableConfigurationCommands {
       messages.append(
         .availableConfigurationCommands(state.availableConfigurationCommands)
@@ -138,9 +144,6 @@ extension CaptureServiceClientBinding {
     }
     if state.microphones != lastState.microphones {
       messages.append(.microphoneDescriptors(state.microphones))
-    }
-    if let camera = state.camera, camera != lastState.camera {
-      messages.append(.cameraDescriptor(camera))
     }
     if state.captureTasks != lastState.captureTasks {
       messages.append(.captureTasks(state.captureTasks))

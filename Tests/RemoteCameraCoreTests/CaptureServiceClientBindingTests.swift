@@ -18,7 +18,7 @@ struct CaptureServiceClientBindingTests {
     try await Task.sleep(for: .milliseconds(1))
 
     #expect(capture.commands.count == 1)
-    guard case let .switchCamera(cameraID) = capture.commands.first else {
+    guard case .switchCamera(let cameraID) = capture.commands.first else {
       throw TestError.conditionFailed
     }
     #expect(cameraID == "cam-1")
@@ -160,6 +160,8 @@ struct CaptureServiceClientBindingTests {
     let capture = DummyCapture()
     let controller = DummyCaptureController()
     var update = CaptureServiceState()
+    update.availableCommands.capturePhoto = true
+    update.availableModes.photo = true
     update.availableConfigurationCommands.lockWhiteBalanceWithGrayWorld = true
     update.camera = .init(id: "cam1", name: "front cam", position: .builtInFront)
     update.configuration.isHDRon = true
@@ -172,7 +174,7 @@ struct CaptureServiceClientBindingTests {
     #expect(received != update)
     let completer = await Completer<Void>()
     await controller.setOnUpdate { updates in
-      if updates.count == 4 {
+      if updates.count == 6 {
         Task {
           await completer.resume()
         }
@@ -193,6 +195,8 @@ struct CaptureServiceClientBindingTests {
     let controller = DummyCaptureController()
     let sut = await CaptureServiceClientBinding(client: controller, service: capture)
     var update = CaptureServiceState()
+    update.availableCommands.capturePhoto = true
+    update.availableModes.photo = true
     update.availableConfigurationCommands.lockWhiteBalanceWithGrayWorld = true
     update.camera = .init(id: "cam1", name: "front cam", position: .builtInFront)
     update.configuration.isHDRon = true
@@ -202,7 +206,7 @@ struct CaptureServiceClientBindingTests {
     controller.status$.send(.ready)
     let preparation = await Completer<Void>()
     await controller.setOnUpdate { updates in
-      if updates.count >= 4 {
+      if updates.count >= 6 {
         Task {
           await preparation.resume()
         }
@@ -212,7 +216,7 @@ struct CaptureServiceClientBindingTests {
 
     let main = await Completer<Void>()
     await controller.setOnUpdate { updates in
-      if updates.count >= 5 {
+      if updates.count >= 7 {
         Task {
           await main.resume()
         }
