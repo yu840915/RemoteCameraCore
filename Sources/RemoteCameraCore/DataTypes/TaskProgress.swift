@@ -1,22 +1,21 @@
-public struct Progress: Sendable, Equatable {
-  public static func + (lhs: Progress, rhs: Progress) -> Progress {
-    Progress(
+public struct TaskProgress: Sendable, Equatable {
+  public static func + (lhs: TaskProgress, rhs: TaskProgress) -> TaskProgress {
+    TaskProgress(
       finished: lhs.finished + rhs.finished,
       total: lhs.total + rhs.total
     )
   }
-
+  private var finishedVal: UInt
   public var finished: UInt {
-    didSet {
-      if finished > total {
-        finished = total
-      }
+    get { finishedVal }
+    set {
+      finishedVal = min(newValue, total)
     }
   }
   public let total: UInt
 
   public init(finished: UInt, total: UInt) {
-    self.finished = min(finished, total)
+    self.finishedVal = min(finished, total)
     self.total = total
   }
 

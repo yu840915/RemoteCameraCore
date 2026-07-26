@@ -1,10 +1,10 @@
 import RemoteCameraCore
 import Testing
 
-struct ProgressTest {
+struct TaskProgressTests {
   @Test
   func initialization() async throws {
-    let sut = Progress(
+    let sut = TaskProgress(
       finished: 0,
       total: 100
     )
@@ -18,7 +18,7 @@ struct ProgressTest {
 
   @Test
   func maxFinishedIsTotal() async throws {
-    let sut = Progress(
+    let sut = TaskProgress(
       finished: 200,
       total: 100
     )
@@ -29,7 +29,7 @@ struct ProgressTest {
 
   @Test
   func fractionCompleted() async throws {
-    let sut = Progress(
+    let sut = TaskProgress(
       finished: 50,
       total: 100
     )
@@ -39,7 +39,7 @@ struct ProgressTest {
 
   @Test
   func isComplete() async throws {
-    let sut = Progress(
+    let sut = TaskProgress(
       finished: 100,
       total: 100
     )
@@ -49,7 +49,7 @@ struct ProgressTest {
 
   @Test
   func hasStarted() async throws {
-    let sut = Progress(
+    let sut = TaskProgress(
       finished: 1,
       total: 100
     )
@@ -59,7 +59,7 @@ struct ProgressTest {
 
   @Test
   func updateFinished() async throws {
-    var sut = Progress(
+    var sut = TaskProgress(
       finished: 0,
       total: 100
     )
@@ -74,7 +74,7 @@ struct ProgressTest {
 
   @Test
   func capValueForFinishedUpdate() async throws {
-    var sut = Progress(
+    var sut = TaskProgress(
       finished: 0,
       total: 100
     )
@@ -87,11 +87,11 @@ struct ProgressTest {
 
   @Test
   func summation() async throws {
-    let progress1 = Progress(
+    let progress1 = TaskProgress(
       finished: 50,
       total: 100
     )
-    let progress2 = Progress(
+    let progress2 = TaskProgress(
       finished: 30,
       total: 100
     )
