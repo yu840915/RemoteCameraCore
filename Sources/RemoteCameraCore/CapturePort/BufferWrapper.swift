@@ -1,12 +1,13 @@
 public final class BufferWrapper: Sendable {
   public enum TypeHint: Sendable {
-    case stillImage(class: String)
+    case stillImage(class: String, info: MediaFileInfo)
     case videoFrame(class: String)
+    case audioFrame(class: String)
     case compressedVideoFrame(class: String)
     case compressedAudioFrame(class: String)
-    case audio(class: String)
+    case audio(class: String, info: MediaFileInfo)
     case data(class: String)
-    case video(class: String)
+    case video(class: String, info: MediaFileInfo)
   }
 
   public let typeHint: TypeHint
