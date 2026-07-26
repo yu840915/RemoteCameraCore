@@ -20,4 +20,6 @@ public struct CaptureServiceCoders {
   >
   public typealias EventEncoder<Data> = MessageEncodingServicePort<CaptureServiceEvent, Data>
   public typealias EventDecoder<Data> = MessageDecodingServicePort<Data, CaptureServiceEvent>
+  public typealias MediaFileInfoEncoder<Data> = MessageEncodingServicePort<MediaFileInfo, Data>
+  public typealias MediaFileInfoDecoder<Data> = MessageDecodingServicePort<Data, MediaFileInfo>
 }
