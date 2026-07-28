@@ -1,4 +1,4 @@
-public struct DeviceOrientation: Sendable, Equatable {
+public struct DeviceDirection: Sendable, Equatable {
   // in radians, 0 is east, counterclockwise, e.g. west is pi
   public let heading: Double
   /// device tilt, in radians, 0 facing forward, pi/2 facing up, -pi/2 facing down, e.g. horizon is 0, sky is pi/2, ground is -pi/2
@@ -6,8 +6,8 @@ public struct DeviceOrientation: Sendable, Equatable {
   public let pitch: Double
   private let type: Type
 
-  public static let virtualForward = DeviceOrientation(type: .virtualForward)
-  public static let virtualBackward = DeviceOrientation(type: .virtualBackward)
+  public static let virtualForward = DeviceDirection(type: .virtualForward)
+  public static let virtualBackward = DeviceDirection(type: .virtualBackward)
 
   public init(
     heading: Double = 0,
@@ -44,7 +44,7 @@ public struct DeviceOrientation: Sendable, Equatable {
   }
 
   public func isArroximatelyOpposite(
-    to other: DeviceOrientation,
+    to other: DeviceDirection,
     headingThreshold: Double = .pi / 2,
     pitchThreshold: Double = 2 * .pi / 3,
   ) -> Bool {
@@ -58,16 +58,16 @@ public struct DeviceOrientation: Sendable, Equatable {
     if pitchAngle > pitchThreshold {
       return true
     }
-    let headingAngle = min(abs(heading - other.heading), abs(other.heading - heading))
+    let headingAngle = min(abs(heading - other.heading), 2 * .pi - abs(heading - other.heading))
     return headingAngle > headingThreshold
   }
 
-  public var opposite: DeviceOrientation {
-    DeviceOrientation(heading: heading + .pi, pitch: -pitch)
+  public var opposite: DeviceDirection {
+    DeviceDirection(heading: heading + .pi, pitch: -pitch)
   }
 }
 
-extension DeviceOrientation {
+extension DeviceDirection {
   enum `Type`: Sendable {
     case physical
     case virtualForward
