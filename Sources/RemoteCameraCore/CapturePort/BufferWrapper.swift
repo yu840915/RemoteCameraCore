@@ -13,19 +13,19 @@ public final class BufferWrapper: Sendable {
   public let typeHint: TypeHint
   public let channel: Int?
   public let imageOrientation: ImageOrientation?
-  public let inputDeviceOrientation: DeviceOrientation?
+  public let inputDeviceDirection: DeviceDirection?
   public nonisolated(unsafe) let buffer: Any
   public init(
     buffer: Any,
     typeHint: TypeHint,
     channel: Int? = nil,
     imageOrientation: ImageOrientation? = nil,
-    inputDeviceOrientation: DeviceOrientation? = nil,
+    inputDeviceDirection: DeviceDirection? = nil,
   ) {
     self.buffer = buffer
     self.typeHint = typeHint
     self.channel = channel
     self.imageOrientation = imageOrientation
-    self.inputDeviceOrientation = inputDeviceOrientation
+    self.inputDeviceDirection = inputDeviceDirection
   }
 }
