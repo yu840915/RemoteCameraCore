@@ -54,7 +54,7 @@ public struct DeviceDirection: Sendable, Equatable {
       }
       return type != other.type
     }
-    let pitchAngle = abs(pitch - other.pitch)
+    let pitchAngle = min(abs(pitch - other.pitch), abs(other.pitch - pitch))
     if pitchAngle > pitchThreshold {
       return true
     }
