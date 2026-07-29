@@ -28,10 +28,10 @@ struct ImageOrientationTests {
     #expect(ImageOrientation.topMirrored.mirrored() == .top)
     #expect(ImageOrientation.bottom.mirrored() == .bottomMirrored)
     #expect(ImageOrientation.bottomMirrored.mirrored() == .bottom)
-    #expect(ImageOrientation.left.mirrored() == .rightMirrored)
-    #expect(ImageOrientation.leftMirrored.mirrored() == .right)
-    #expect(ImageOrientation.right.mirrored() == .leftMirrored)
-    #expect(ImageOrientation.rightMirrored.mirrored() == .left)
+    #expect(ImageOrientation.left.mirrored() == .leftMirrored)
+    #expect(ImageOrientation.leftMirrored.mirrored() == .left)
+    #expect(ImageOrientation.right.mirrored() == .rightMirrored)
+    #expect(ImageOrientation.rightMirrored.mirrored() == .right)
   }
 
   @Test
