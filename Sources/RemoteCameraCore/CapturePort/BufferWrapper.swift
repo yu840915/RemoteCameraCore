@@ -14,6 +14,7 @@ public final class BufferWrapper: Sendable {
   public let channel: Int?
   public let imageOrientation: ImageOrientation?
   public let inputDeviceDirection: DeviceDirection?
+  public let videoMirroring: VideoMirroring
   public nonisolated(unsafe) let buffer: Any
   public init(
     buffer: Any,
@@ -21,11 +22,20 @@ public final class BufferWrapper: Sendable {
     channel: Int? = nil,
     imageOrientation: ImageOrientation? = nil,
     inputDeviceDirection: DeviceDirection? = nil,
+    videoMirroring: VideoMirroring = .none,
   ) {
     self.buffer = buffer
     self.typeHint = typeHint
     self.channel = channel
     self.imageOrientation = imageOrientation
     self.inputDeviceDirection = inputDeviceDirection
+    self.videoMirroring = videoMirroring
   }
+}
+
+public enum VideoMirroring: Sendable {
+  case none
+  case horizontal
+  case vertical
+  case both
 }

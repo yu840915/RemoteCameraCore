@@ -21,10 +21,10 @@ public enum ImageOrientation: UInt8, Sendable {
     case .topMirrored: .top
     case .bottom: .bottomMirrored
     case .bottomMirrored: .bottom
-    case .left: .rightMirrored
-    case .leftMirrored: .right
-    case .right: .leftMirrored
-    case .rightMirrored: .left
+    case .left: .leftMirrored
+    case .leftMirrored: .left
+    case .right: .rightMirrored
+    case .rightMirrored: .right
     }
   }
 
