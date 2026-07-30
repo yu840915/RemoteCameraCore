@@ -1,9 +1,9 @@
 public final class BufferWrapper: Sendable {
   public enum TypeHint: Sendable {
     case stillImage(class: String, info: MediaFileInfo)
-    case videoFrame(class: String)
+    case videoFrame(class: String, info: VideoBufferInfo)
     case audioFrame(class: String)
-    case compressedVideoFrame(class: String)
+    case compressedVideoFrame(class: String, info: VideoBufferInfo)
     case compressedAudioFrame(class: String)
     case audio(class: String, info: MediaFileInfo)
     case data(class: String)
@@ -12,24 +12,19 @@ public final class BufferWrapper: Sendable {
 
   public let typeHint: TypeHint
   public let channel: Int?
-  public let imageOrientation: ImageOrientation?
   public let inputDeviceDirection: DeviceDirection?
-  public let videoMirroring: VideoMirroring
   public nonisolated(unsafe) let buffer: Any
   public init(
     buffer: Any,
     typeHint: TypeHint,
     channel: Int? = nil,
-    imageOrientation: ImageOrientation? = nil,
     inputDeviceDirection: DeviceDirection? = nil,
-    videoMirroring: VideoMirroring = .none,
   ) {
     self.buffer = buffer
     self.typeHint = typeHint
     self.channel = channel
-    self.imageOrientation = imageOrientation
     self.inputDeviceDirection = inputDeviceDirection
-    self.videoMirroring = videoMirroring
+
   }
 }
 
