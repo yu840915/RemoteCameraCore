@@ -2,26 +2,34 @@ import RemoteCameraCore
 import Testing
 
 struct VideoBufferInfoTransformTests {
-  private static let orientations: [ImageOrientation] = [
-    .top, .topMirrored,
-    .bottom, .bottomMirrored,
-    .left, .leftMirrored,
-    .right, .rightMirrored,
-  ]
-
-  private static let mirrorings: [VideoMirroring] = [.none, .horizontal, .vertical, .both]
+  private static let allBufferInfos: [VideoBufferInfo] = {
+    let orientations: [ImageOrientation] = [
+      .top, .topMirrored,
+      .bottom, .bottomMirrored,
+      .left, .leftMirrored,
+      .right, .rightMirrored,
+    ]
+    let mirrorings: [VideoMirroring] = [.none, .horizontal, .vertical, .both]
+    var infos: [VideoBufferInfo] = []
+    for orientation in orientations {
+      for mirroring in mirrorings {
+        infos.append(
+          VideoBufferInfo(
+            dimensions: .init(width: 1920, height: 1080),
+            orientation: orientation,
+            mirroring: mirroring
+          )
+        )
+      }
+    }
+    return infos
+  }()
 
   private static let corners: [Point] = [
     .init(x: 0, y: 0),
     .init(x: 1, y: 0),
     .init(x: 0, y: 1),
     .init(x: 1, y: 1),
-  ]
-
-  private static let samplePoints: [Point] = corners + [
-    .init(x: 0.5, y: 0.5),
-    .init(x: 0.25, y: 0.75),
-    .init(x: 0.9, y: 0.1),
   ]
 
   private func info(
@@ -40,20 +48,22 @@ struct VideoBufferInfoTransformTests {
   /// The whole reason this lives in one place: every orientation and mirroring combination has
   /// to survive a trip out to the view finder and back unchanged. A sign flip anywhere in the
   /// chain shows up here, rather than as a camera focusing on the wrong side of the frame.
-  @Test
-  func roundTripsThroughDisplaySpace() throws {
-    for orientation in Self.orientations {
-      for mirroring in Self.mirrorings {
-        let subject = info(orientation, mirroring)
-        for poi in Self.samplePoints {
-          let display = try #require(subject.displayPoint(for: poi))
-          let restored = try #require(subject.pointOfInterest(for: display))
-          #expect(
-            restored.isApproximately(poi),
-            "\(orientation) / \(mirroring): \(poi) -> \(display) -> \(restored)"
-          )
-        }
-      }
+  @Test(arguments: allBufferInfos)
+  func roundTripsThroughDisplaySpace(_ sut: VideoBufferInfo) throws {
+    let samplePoints: [Point] =
+      Self.corners + [
+        .init(x: 0.5, y: 0.5),
+        .init(x: 0.25, y: 0.75),
+        .init(x: 0.9, y: 0.1),
+      ]
+    for poi in samplePoints {
+      let display = try #require(sut.displayPoint(for: poi))
+      let restored = try #require(sut.pointOfInterest(for: display))
+
+      #expect(
+        restored.isApproximately(poi),
+        "\(sut): \(poi) -> \(display) -> \(restored)"
+      )
     }
   }
 
@@ -61,33 +71,26 @@ struct VideoBufferInfoTransformTests {
 
   /// Every combination is a rigid motion of the square, so the four corners have to come out as
   /// the same four corners — no scaling, no shear, nothing pushed outside the unit square.
-  @Test
-  func permutesTheCorners() throws {
-    for orientation in Self.orientations {
-      for mirroring in Self.mirrorings {
-        let subject = info(orientation, mirroring)
-        let mapped = try Self.corners.map { try #require(subject.displayPoint(for: $0)) }
-        for corner in Self.corners {
-          #expect(
-            mapped.contains(corner),
-            "\(orientation) / \(mirroring) never produced \(corner)"
-          )
-        }
-      }
+  @Test(arguments: allBufferInfos)
+  func permutesTheCorners(_ sut: VideoBufferInfo) throws {
+    let mapped = try Self.corners.map { try #require(sut.displayPoint(for: $0)) }
+
+    for corner in Self.corners {
+      #expect(
+        mapped.contains(corner),
+        "\(sut) never produced \(corner)"
+      )
     }
   }
 
   /// Catches a missing or lopsided centring step: the middle of the frame is the one point
   /// every rotation and flip has to leave alone. Exact here — 0.5 survives the centring.
-  @Test
-  func leavesTheCentreAlone() throws {
+  @Test(arguments: allBufferInfos)
+  func leavesTheCentreAlone(_ sut: VideoBufferInfo) throws {
     let centre = Point(x: 0.5, y: 0.5)
-    for orientation in Self.orientations {
-      for mirroring in Self.mirrorings {
-        let display = try #require(info(orientation, mirroring).displayPoint(for: centre))
-        #expect(display == centre, "\(orientation) / \(mirroring)")
-      }
-    }
+    let display = try #require(sut.displayPoint(for: centre))
+
+    #expect(display == centre, "\(sut)")
   }
 
   // MARK: - Absolute placement
@@ -96,6 +99,7 @@ struct VideoBufferInfoTransformTests {
   func leavesUprightBuffersAlone() throws {
     let poi = Point(x: 0.25, y: 0.75)
     let display = try #require(info(.top).displayPoint(for: poi))
+
     #expect(display == poi)
   }
 
@@ -107,6 +111,7 @@ struct VideoBufferInfoTransformTests {
     let left = try #require(info(.left).displayPoint(for: topLeft))
     let right = try #require(info(.right).displayPoint(for: topLeft))
     let bottom = try #require(info(.bottom).displayPoint(for: topLeft))
+
     #expect(left == Point(x: 1, y: 0))
     #expect(right == Point(x: 0, y: 1))
     #expect(bottom == Point(x: 1, y: 1))
@@ -124,6 +129,7 @@ struct VideoBufferInfoTransformTests {
       info(.top, .vertical).displayPoint(for: .init(x: 0.5, y: 0))
     )
     let both = try #require(info(.top, .both).displayPoint(for: .init(x: 0, y: 0)))
+
     #expect(horizontal == Point(x: 1, y: 0.5))
     #expect(vertical == Point(x: 0.5, y: 1))
     #expect(both == Point(x: 1, y: 1))
@@ -135,6 +141,7 @@ struct VideoBufferInfoTransformTests {
   func composesBakedInAndExternalMirroring() throws {
     let poi = Point(x: 0.2, y: 0.6)
     let display = try #require(info(.topMirrored, .horizontal).displayPoint(for: poi))
+
     #expect(display == poi)
   }
 
@@ -145,6 +152,7 @@ struct VideoBufferInfoTransformTests {
   @Test
   func refusesToGuessWithoutAnOrientation() {
     let subject = info(nil, .horizontal)
+
     #expect(subject.displayPoint(for: .init(x: 0.5, y: 0.5)) == nil)
     #expect(subject.pointOfInterest(for: .init(x: 0.5, y: 0.5)) == nil)
   }
@@ -156,6 +164,7 @@ struct VideoBufferInfoTransformTests {
     let subject = info(.left)
     let low = try #require(subject.pointOfInterest(for: .init(x: -0.4, y: -1.2)))
     let high = try #require(subject.pointOfInterest(for: .init(x: 1.8, y: 3.0)))
+
     for value in [low.x, low.y, high.x, high.y] {
       #expect((0...1).contains(value))
     }

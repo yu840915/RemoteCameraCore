@@ -2,23 +2,21 @@ import RemoteCameraCore
 import Testing
 
 struct ImagePlaneTransformTests {
-  private static let all: [ImagePlaneTransform] = [
-    .identity,
-    .quarterTurnClockwise,
-    .quarterTurnCounterClockwise,
-    .halfTurn,
-    .flippedHorizontally,
-    .flippedVertically,
-  ]
-
   /// `inverted` returns the transpose. That is only the inverse because these transforms are
   /// orthogonal, so the assumption is worth holding down.
-  @Test
-  func invertsByTransposing() {
-    for transform in Self.all {
-      #expect(transform.concatenating(transform.inverted) == .identity)
-      #expect(transform.inverted.concatenating(transform) == .identity)
-    }
+  @Test(
+    arguments: [
+      ImagePlaneTransform.identity,
+      .quarterTurnClockwise,
+      .quarterTurnCounterClockwise,
+      .halfTurn,
+      .flippedHorizontally,
+      .flippedVertically,
+    ]
+  )
+  func invertsByTransposing(_ sut: ImagePlaneTransform) {
+    #expect(sut.concatenating(sut.inverted) == .identity)
+    #expect(sut.inverted.concatenating(sut) == .identity)
   }
 
   @Test
@@ -43,6 +41,7 @@ struct ImagePlaneTransformTests {
       .concatenating(.quarterTurnClockwise)
     let turnThenFlip = ImagePlaneTransform.quarterTurnClockwise
       .concatenating(.flippedHorizontally)
+
     #expect(flipThenTurn != turnThenFlip)
     #expect(flipThenTurn == turnThenFlip.concatenating(.halfTurn))
   }
@@ -67,15 +66,17 @@ struct ImagePlaneTransformTests {
   /// direction `CGAffineTransform(rotationAngle:)` turns, so the bridge needs no correction.
   @Test
   func rotatesAboutTheOrigin() {
-    let turned = ImagePlaneTransform.quarterTurnClockwise.apply(to: .init(x: 1, y: 0))
-    #expect(turned == Point(x: 0, y: 1))
+    let sut = ImagePlaneTransform.quarterTurnClockwise.apply(to: .init(x: 1, y: 0))
+
+    #expect(sut == Point(x: 0, y: 1))
   }
 
   @Test
   func rotatesAboutTheCentreOfTheUnitSquare() {
-    let transform = ImagePlaneTransform.quarterTurnClockwise
-    #expect(transform.applyAboutUnitCentre(to: .init(x: 0.5, y: 0.5)) == Point(x: 0.5, y: 0.5))
-    #expect(transform.applyAboutUnitCentre(to: .init(x: 0, y: 0)) == Point(x: 1, y: 0))
-    #expect(transform.applyAboutUnitCentre(to: .init(x: 1, y: 0)) == Point(x: 1, y: 1))
+    let sut = ImagePlaneTransform.quarterTurnClockwise
+
+    #expect(sut.applyAboutUnitCentre(to: .init(x: 0.5, y: 0.5)) == Point(x: 0.5, y: 0.5))
+    #expect(sut.applyAboutUnitCentre(to: .init(x: 0, y: 0)) == Point(x: 1, y: 0))
+    #expect(sut.applyAboutUnitCentre(to: .init(x: 1, y: 0)) == Point(x: 1, y: 1))
   }
 }

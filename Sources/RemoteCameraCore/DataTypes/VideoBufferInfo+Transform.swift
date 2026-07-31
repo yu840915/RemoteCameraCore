@@ -35,12 +35,7 @@ extension VideoBufferInfo {
       return nil
     }
     let point = orientationTransform.inverted.applyAboutUnitCentre(to: displayPoint)
-    return Point(x: point.x.clampedToUnit, y: point.y.clampedToUnit)
-  }
-}
-
-extension Double {
-  fileprivate var clampedToUnit: Double {
-    min(max(self, 0), 1)
+    let range = ValueRange<Double>(min: 0, max: 1)
+    return Point(x: range.clamp(point.x), y: range.clamp(point.y))
   }
 }
