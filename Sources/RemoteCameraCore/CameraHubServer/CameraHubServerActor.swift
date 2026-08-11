@@ -56,10 +56,10 @@ actor CameraHubServerActor {
       try await startAdvertising()
     case .stopAdvertising:
       try await stopAdvertising()
-    case let .acceptRequest(request):
+    case .acceptRequest(let request):
       try await acceptRequest(request)
-    default:
-      break
+    case .disconnect(let controller):
+      try await disconnect(controller)
     }
   }
 }
@@ -109,7 +109,7 @@ extension CameraHubServerActor {
 
   fileprivate func onAdvertiserEvent(_ event: CameraHubAdvertisingServiceEvent) async {
     switch event {
-    case let .cameraHubClient(client):
+    case .cameraHubClient(let client):
       let binding = await CameraHubServiceClientBinding(client: client, service: localHub)
       bindings.append(binding)
       Task { [weak self] in
@@ -180,5 +180,16 @@ extension CameraHubServerActor {
     update.isAdvertising = false
     update.requests = []
     state$.value = update
+
+  }
+
+  fileprivate func disconnect(_ controller: CameraControllerDescriptor) async throws {
+    guard
+      let index = bindings.firstIndex(where: { $0.client.controllerDescriptor == controller })
+    else {
+      return
+    }
+    let binding = bindings.remove(at: index)
+    await binding.unbind(nil, localTriggered: true)
   }
 }
