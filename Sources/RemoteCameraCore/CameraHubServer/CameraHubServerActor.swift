@@ -5,7 +5,7 @@ actor CameraHubServerActor {
   final let localHub: any CameraHubServicePort
   final let advertiserFactory: any CameraHubAdvertiserFactoryPort
   private var advertiser: (any CameraHubAdvertisingServicePort)?
-  private var adversiserBag: Set<AnyCancellable> = []
+  private var advertiserBag: Set<AnyCancellable> = []
   private let state$: CurrentValueSubject<CameraHubServerState, Never>
   private let status$: CurrentValueSubject<NodeStatus, Never>
   private let event$: PassthroughSubject<CameraHubServerEvent, Never>
@@ -21,7 +21,6 @@ actor CameraHubServerActor {
       state$.value = update
     }
   }
-  private var advertiserBag = Set<AnyCancellable>()
   private var hubBag: Set<AnyCancellable> = []
 
   init(
@@ -96,7 +95,7 @@ extension CameraHubServerActor {
       }
     }.store(in: &bag)
     self.advertiser = advertiser
-    adversiserBag = bag
+    advertiserBag = bag
     return advertiser
   }
 
@@ -174,7 +173,7 @@ extension CameraHubServerActor {
   }
 
   fileprivate func removeAdvertiser() {
-    adversiserBag = []
+    advertiserBag = []
     advertiser = nil
     var update = state$.value
     update.isAdvertising = false

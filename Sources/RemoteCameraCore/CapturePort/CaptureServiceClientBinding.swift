@@ -98,6 +98,8 @@ extension CaptureServiceClientBinding {
     case .ready:
       prepareServiceChannels()
       await routeState(service.state)
+    // case .preparing:
+    //   lastState = CaptureServiceState()
     default: serviceBag = []
     }
   }
@@ -121,40 +123,7 @@ extension CaptureServiceClientBinding {
   }
 
   fileprivate func routeState(_ state: CaptureServiceState) async {
-    var messages = [CaptureServiceStateUpdateMessage]()
-    if state.capabilities != lastState.capabilities {
-      messages.append(.capabilities(state.capabilities))
-    }
-    if state.availableModes != lastState.availableModes {
-      messages.append(.availableModes(state.availableModes))
-    }
-    if state.availableCommands != lastState.availableCommands {
-      messages.append(.availableCommands(state.availableCommands))
-    }
-    if state.availableConfigurationCommands != lastState.availableConfigurationCommands {
-      messages.append(
-        .availableConfigurationCommands(state.availableConfigurationCommands)
-      )
-    }
-    if state.configuration != lastState.configuration {
-      messages.append(.configuration(state.configuration))
-    }
-    if let camera = state.camera, camera != lastState.camera {
-      messages.append(.cameraDescriptor(camera))
-    }
-    if state.microphones != lastState.microphones {
-      messages.append(.microphoneDescriptors(state.microphones))
-    }
-    if state.captureTasks != lastState.captureTasks {
-      messages.append(.captureTasks(state.captureTasks))
-    }
-    if state.recordingTasks != lastState.recordingTasks {
-      messages.append(.recordingTasks(state.recordingTasks))
-    }
-    if state.mode != lastState.mode {
-      messages.append(.mode(state.mode))
-    }
-
+    let messages = state.diff(from: lastState)
     lastState = state
     await withTaskGroup(of: Void.self) { [weak self] group in
       for message in messages {

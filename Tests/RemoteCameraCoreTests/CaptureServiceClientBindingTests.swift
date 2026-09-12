@@ -172,7 +172,7 @@ struct CaptureServiceClientBindingTests {
     var received = CaptureServiceState()
 
     #expect(received != update)
-    let completer = await Completer<Void>()
+    let completer = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
     await controller.setOnUpdate { updates in
       if updates.count == 6 {
         Task {
@@ -182,7 +182,7 @@ struct CaptureServiceClientBindingTests {
     }
     sut = await CaptureServiceClientBinding(client: controller, service: capture)
     controller.status$.send(.ready)
-    await completer.result()
+    try await completer.result()
     let updates = await controller.actor.updates
     received.update(updates)
     #expect(received == update)
@@ -204,7 +204,7 @@ struct CaptureServiceClientBindingTests {
     var received = update
     capture.state$.send(update)
     controller.status$.send(.ready)
-    let preparation = await Completer<Void>()
+    let preparation = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
     await controller.setOnUpdate { updates in
       if updates.count >= 6 {
         Task {
@@ -212,9 +212,9 @@ struct CaptureServiceClientBindingTests {
         }
       }
     }
-    await preparation.result()
+    try await preparation.result()
 
-    let main = await Completer<Void>()
+    let main = await TimeoutThrowingCompleter<Void>(waitFor: .seconds(1))
     await controller.setOnUpdate { updates in
       if updates.count >= 7 {
         Task {
@@ -224,7 +224,7 @@ struct CaptureServiceClientBindingTests {
     }
     update.camera = .init(id: "cam2", name: "back cam", position: .builtInBack)
     capture.state$.send(update)
-    await main.result()
+    try await main.result()
 
     let updates = await controller.actor.updates
     let last = updates.last!

@@ -108,13 +108,13 @@ struct DeviceDirectionTests {
   @Test(
     nil,
     arguments: [(Double, Double)]([
-      (0.0, Double.pi / 2),
+      (0.0, 0.5 * Double.pi),
       (30.0, Double.pi / 3),
-      (90.0, 0),
-      (135.0, 7 * Double.pi / 4),
-      (180.0, 3 * Double.pi / 2),
-      (-180.0, 3 * Double.pi / 2),
-      (540.0, 3 * Double.pi / 2),
+      (90.0, 0.0),
+      (135.0, 1.75 * Double.pi),
+      (180.0, 1.5 * Double.pi),
+      (-180.0, 1.5 * Double.pi),
+      (540.0, 1.5 * Double.pi),
     ]),
   )
   func initWithCompassHeading(compassHeading: Double, heading: Double) async throws {
