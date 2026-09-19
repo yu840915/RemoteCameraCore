@@ -4,19 +4,22 @@ public struct CameraDescriptor: Sendable, Equatable {
   public let position: CameraPosition
   public let focalLength: Double?
   public let aperture: Double?
+  public let consituentCameras: [CameraDescriptor]
 
   public init(
     id: String,
     name: String,
     position: CameraPosition,
     focalLength: Double? = nil,
-    aperture: Double? = nil
+    aperture: Double? = nil,
+    consituentCameras: [CameraDescriptor] = []
   ) {
     self.id = id
     self.name = name
     self.position = position
     self.focalLength = focalLength
     self.aperture = aperture
+    self.consituentCameras = consituentCameras
   }
 }
 
