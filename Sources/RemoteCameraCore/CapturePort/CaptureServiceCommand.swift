@@ -84,6 +84,8 @@ extension CaptureServiceCommand {
     case setWhiteBalanceGains(gains: WhiteBalanceGains)
     case lockWhiteBalanceWithGrayWorld
 
+    case setVideoFrameDuration(duration: RationalDuration)
+
     public struct FeatureTable: Sendable, Equatable {
       public var setLivePhoto = false
       public var setTorchMode = false
@@ -102,6 +104,7 @@ extension CaptureServiceCommand {
       public var setTemperatureAndTint = false
       public var setWhiteBalanceGains = false
       public var lockWhiteBalanceWithGrayWorld = false
+      public var setVideoFrameDuration = false
 
       public init() {}
     }

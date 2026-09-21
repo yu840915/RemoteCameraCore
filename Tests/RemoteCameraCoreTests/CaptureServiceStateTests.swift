@@ -282,4 +282,41 @@ struct CaptureServiceStateTests {
 
     #expect(!sut.canPerform(.setISO(iso: value)))
   }
+
+  @Test(arguments: [
+    RationalDuration(frameRate: 60),
+    RationalDuration(frameRate: 45),
+    RationalDuration(frameRate: 30),
+    RationalDuration(frameRate: 15),
+    // The same lengths stated at another scale, as a device reporting in
+    // nanoseconds or 1/600 of a second would.
+    RationalDuration(value: 20, scale: 600),
+    RationalDuration(value: 2, scale: 60),
+  ])
+  func frameDurationWithinRange(_ duration: RationalDuration) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setVideoFrameDuration = true
+
+    sut.capabilities.frameDurationRanges = [
+      ValueRange(min: RationalDuration(frameRate: 30), max: RationalDuration(frameRate: 15)),
+      ValueRange(min: RationalDuration(frameRate: 60), max: RationalDuration(frameRate: 30)),
+    ]
+
+    #expect(sut.canPerform(.setVideoFrameDuration(duration: duration)))
+  }
+
+  @Test(arguments: [
+    RationalDuration(frameRate: 120),
+    RationalDuration(frameRate: 10),
+  ])
+  func frameDurationOutOfRange(_ duration: RationalDuration) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setVideoFrameDuration = true
+    sut.capabilities.frameDurationRanges = [
+      ValueRange(min: RationalDuration(frameRate: 30), max: RationalDuration(frameRate: 15)),
+      ValueRange(min: RationalDuration(frameRate: 60), max: RationalDuration(frameRate: 30)),
+    ]
+
+    #expect(!sut.canPerform(.setVideoFrameDuration(duration: duration)))
+  }
 }

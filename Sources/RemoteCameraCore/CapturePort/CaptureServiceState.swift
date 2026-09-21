@@ -67,6 +67,9 @@ extension CaptureServiceState: CommandAvailabilityChecking {
     case .lockWhiteBalanceWithGrayWorld:
       availableConfigurationCommands.lockWhiteBalanceWithGrayWorld
         && capabilities.whiteBalanceModes.contains(.locked)
+    case .setVideoFrameDuration(let arg):
+      availableConfigurationCommands.setVideoFrameDuration
+        && capabilities.frameDurationRanges.contains(where: { $0.contains(arg) })
     }
   }
 }
@@ -126,6 +129,10 @@ public struct CameraConfiguration: Sendable, Equatable {
   public var temperatureAndTint: TemperatureAndTint?
   public var whiteBalanceGains: WhiteBalanceGains?
 
+  public var minimumFrameDuration: RationalDuration?
+  public var maximumFrameDuration: RationalDuration?
+  public var dimensions: ImageDimensions?
+
   public init() {}
 }
 
@@ -146,6 +153,9 @@ public struct CameraCapabilities: Sendable, Equatable {
   public var whiteBalanceRedGainsRange: ValueRange<Double>?
   public var whiteBalanceGreenGainsRange: ValueRange<Double>?
   public var whiteBalanceBlueGainsRange: ValueRange<Double>?
+
+  public var frameDurationRanges: [ValueRange<RationalDuration>] = []
+  public var dimensions: [ImageDimensions] = []
 
   public init() {}
 }
