@@ -70,6 +70,9 @@ extension CaptureServiceState: CommandAvailabilityChecking {
     case .setVideoFrameDuration(let arg):
       availableConfigurationCommands.setVideoFrameDuration
         && capabilities.frameDurationRanges.contains(where: { $0.contains(arg) })
+    case .setDimensions(let arg):
+      availableConfigurationCommands.setDimensions
+        && capabilities.availableDimensions.contains(where: { $0.circumscribe(arg) })
     }
   }
 }
@@ -155,7 +158,7 @@ public struct CameraCapabilities: Sendable, Equatable {
   public var whiteBalanceBlueGainsRange: ValueRange<Double>?
 
   public var frameDurationRanges: [ValueRange<RationalDuration>] = []
-  public var dimensions: [ImageDimensions] = []
+  public var availableDimensions: [ImageDimensions] = []
 
   public init() {}
 }

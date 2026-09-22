@@ -85,6 +85,7 @@ extension CaptureServiceCommand {
     case lockWhiteBalanceWithGrayWorld
 
     case setVideoFrameDuration(duration: RationalDuration)
+    case setDimensions(dimensions: ImageDimensions)
 
     public struct FeatureTable: Sendable, Equatable {
       public var setLivePhoto = false
@@ -105,6 +106,7 @@ extension CaptureServiceCommand {
       public var setWhiteBalanceGains = false
       public var lockWhiteBalanceWithGrayWorld = false
       public var setVideoFrameDuration = false
+      public var setDimensions = false
 
       public init() {}
     }
@@ -130,5 +132,7 @@ extension CaptureServiceCommand.ConfigurationCommand.FeatureTable {
     setTemperatureAndTint = true
     setWhiteBalanceGains = true
     lockWhiteBalanceWithGrayWorld = true
+    setVideoFrameDuration = true
+    setDimensions = true
   }
 }

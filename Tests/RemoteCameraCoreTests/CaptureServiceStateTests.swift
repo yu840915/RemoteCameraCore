@@ -319,4 +319,59 @@ struct CaptureServiceStateTests {
 
     #expect(!sut.canPerform(.setVideoFrameDuration(duration: duration)))
   }
+
+  @Test(arguments: [
+    // Exactly what the camera reports.
+    ImageDimensions(width: 1920, height: 1080),
+    ImageDimensions(width: 1440, height: 1080),
+    // Crops and downscales of it.
+    ImageDimensions(width: 1280, height: 720),
+    ImageDimensions(width: 1080, height: 1080),
+    ImageDimensions(width: 640, height: 480),
+  ])
+  func dimensionsCircumscribedByACapability(_ dimensions: ImageDimensions) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setDimensions = true
+    sut.capabilities.availableDimensions = [
+      ImageDimensions(width: 1920, height: 1080),
+      ImageDimensions(width: 1440, height: 1080),
+    ]
+
+    #expect(sut.canPerform(.setDimensions(dimensions: dimensions)))
+  }
+
+  @Test(arguments: [
+    // Larger than anything the camera offers.
+    ImageDimensions(width: 3840, height: 2160),
+    ImageDimensions(width: 1920, height: 1081),
+    // Portrait, which is the landscape frame under an orientation rather than
+    // a size the camera produces.
+    ImageDimensions(width: 1080, height: 1920),
+  ])
+  func dimensionsNoCapabilityCircumscribes(_ dimensions: ImageDimensions) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setDimensions = true
+    sut.capabilities.availableDimensions = [
+      ImageDimensions(width: 1920, height: 1080),
+      ImageDimensions(width: 1440, height: 1080),
+    ]
+
+    #expect(!sut.canPerform(.setDimensions(dimensions: dimensions)))
+  }
+
+  @Test
+  func dimensionsWithoutTheCommandAvailable() async throws {
+    var sut = CaptureServiceState()
+    sut.capabilities.availableDimensions = [ImageDimensions(width: 1920, height: 1080)]
+
+    #expect(!sut.canPerform(.setDimensions(dimensions: ImageDimensions(width: 1280, height: 720))))
+  }
+
+  @Test
+  func dimensionsWithoutAnyReportedByTheCamera() async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setDimensions = true
+
+    #expect(!sut.canPerform(.setDimensions(dimensions: ImageDimensions(width: 1280, height: 720))))
+  }
 }

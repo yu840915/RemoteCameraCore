@@ -23,4 +23,8 @@ public struct ImageDimensions: Equatable, Sendable {
   public func transposed() -> ImageDimensions {
     ImageDimensions(width: height, height: width)
   }
+
+  public func circumscribe(_ dimensions: ImageDimensions) -> Bool {
+    width >= dimensions.width && height >= dimensions.height
+  }
 }
