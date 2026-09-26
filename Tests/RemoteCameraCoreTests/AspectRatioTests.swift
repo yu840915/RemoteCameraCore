@@ -50,53 +50,6 @@ struct AspectRatioTests {
   }
 
   @Test
-  func cropsWidescreenOutOfStandard() async throws {
-    let sut = AspectRatio.widescreen.largestFit(in: ImageDimensions(width: 1440, height: 1080))
-
-    #expect(sut == ImageDimensions(width: 1440, height: 810))
-  }
-
-  @Test
-  func cropsStandardOutOfWidescreen() async throws {
-    let sut = AspectRatio.standard.largestFit(in: ImageDimensions(width: 1920, height: 1080))
-
-    #expect(sut == ImageDimensions(width: 1440, height: 1080))
-  }
-
-  @Test
-  func cropsSquareOutOfEitherShape() async throws {
-    #expect(
-      AspectRatio.square.largestFit(in: ImageDimensions(width: 1920, height: 1080))
-        == ImageDimensions(width: 1080, height: 1080)
-    )
-    #expect(
-      AspectRatio.square.largestFit(in: ImageDimensions(width: 1440, height: 1080))
-        == ImageDimensions(width: 1080, height: 1080)
-    )
-  }
-
-  @Test
-  func leavesAFrameOfTheSameShapeAlone() async throws {
-    let source = ImageDimensions(width: 3840, height: 2160)
-
-    #expect(AspectRatio.widescreen.largestFit(in: source) == source)
-  }
-
-  @Test
-  func fitsInsideAPortraitFrame() async throws {
-    let sut = AspectRatio.widescreen.largestFit(in: ImageDimensions(width: 1080, height: 1920))
-
-    #expect(sut == ImageDimensions(width: 1080, height: 607))
-  }
-
-  @Test
-  func invalidRatioLeavesTheFrameUncropped() async throws {
-    let source = ImageDimensions(width: 1920, height: 1080)
-
-    #expect(AspectRatio(width: 0, height: 0).largestFit(in: source) == source)
-  }
-
-  @Test
   func dimensionsReportTheirOwnShape() async throws {
     #expect(ImageDimensions(width: 1920, height: 1080).aspectRatio == .widescreen)
     #expect(ImageDimensions(width: 4032, height: 3024).aspectRatio == .standard)

@@ -321,15 +321,10 @@ struct CaptureServiceStateTests {
   }
 
   @Test(arguments: [
-    // Exactly what the camera reports.
     ImageDimensions(width: 1920, height: 1080),
     ImageDimensions(width: 1440, height: 1080),
-    // Crops and downscales of it.
-    ImageDimensions(width: 1280, height: 720),
-    ImageDimensions(width: 1080, height: 1080),
-    ImageDimensions(width: 640, height: 480),
   ])
-  func dimensionsCircumscribedByACapability(_ dimensions: ImageDimensions) async throws {
+  func dimensionsMatchingACapability(_ dimensions: ImageDimensions) async throws {
     var sut = CaptureServiceState()
     sut.availableConfigurationCommands.setDimensions = true
     sut.capabilities.availableDimensions = [
@@ -344,11 +339,14 @@ struct CaptureServiceStateTests {
     // Larger than anything the camera offers.
     ImageDimensions(width: 3840, height: 2160),
     ImageDimensions(width: 1920, height: 1081),
+    // Smaller than a format, but not a size the camera produces.
+    ImageDimensions(width: 1280, height: 720),
+    ImageDimensions(width: 1080, height: 1080),
     // Portrait, which is the landscape frame under an orientation rather than
     // a size the camera produces.
     ImageDimensions(width: 1080, height: 1920),
   ])
-  func dimensionsNoCapabilityCircumscribes(_ dimensions: ImageDimensions) async throws {
+  func dimensionsNoCapabilityOffers(_ dimensions: ImageDimensions) async throws {
     var sut = CaptureServiceState()
     sut.availableConfigurationCommands.setDimensions = true
     sut.capabilities.availableDimensions = [

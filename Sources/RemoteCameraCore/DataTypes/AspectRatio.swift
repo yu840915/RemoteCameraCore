@@ -70,22 +70,6 @@ extension AspectRatio: CustomStringConvertible {
   }
 }
 
-extension AspectRatio {
-  public func largestFit(in dimensions: ImageDimensions) -> ImageDimensions {
-    guard isValid else {
-      return dimensions
-    }
-    let fittedWidth = dimensions.height * width / height
-    if fittedWidth <= dimensions.width {
-      return ImageDimensions(width: fittedWidth, height: dimensions.height)
-    }
-    return ImageDimensions(
-      width: dimensions.width,
-      height: dimensions.width * height / width
-    )
-  }
-}
-
 extension ImageDimensions {
   public var aspectRatio: AspectRatio {
     AspectRatio(width: width, height: height)

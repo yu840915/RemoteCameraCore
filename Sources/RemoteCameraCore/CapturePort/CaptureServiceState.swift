@@ -72,7 +72,7 @@ extension CaptureServiceState: CommandAvailabilityChecking {
         && capabilities.frameDurationRanges.contains(where: { $0.contains(arg) })
     case .setDimensions(let arg):
       availableConfigurationCommands.setDimensions
-        && capabilities.availableDimensions.contains(where: { $0.circumscribe(arg) })
+        && capabilities.availableDimensions.contains(arg)
     }
   }
 }
