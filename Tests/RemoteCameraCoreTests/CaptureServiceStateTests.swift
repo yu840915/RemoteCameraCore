@@ -229,30 +229,46 @@ struct CaptureServiceStateTests {
 
   @Test(
     "Exposure duration within range",
-    arguments: [0.1, 0.5, 1.0]
+    arguments: [
+      RationalDuration(value: 1, scale: 100),
+      RationalDuration(value: 1, scale: 10),
+      RationalDuration(value: 1, scale: 2),
+      RationalDuration(value: 1, scale: 1),
+    ]
   )
-  func exposureDurationWithRange(_ duration: Double) async throws {
+  func exposureDurationWithRange(_ duration: RationalDuration) async throws {
     var sut = CaptureServiceState()
-    sut.capabilities.exposureDurationRange = .init(min: 0.01, max: 1.0)
+    sut.capabilities.exposureDurationRange = .init(
+      min: RationalDuration(value: 1, scale: 100),
+      max: RationalDuration(value: 1, scale: 1)
+    )
 
     sut.availableConfigurationCommands.setExposureDuration = false
-    #expect(!sut.canPerform(.setExposureDuration(seconds: duration)))
+    #expect(!sut.canPerform(.setExposureDuration(duration: duration)))
 
     sut.availableConfigurationCommands.setExposureDuration = true
-    #expect(sut.canPerform(.setExposureDuration(seconds: duration)))
+    #expect(sut.canPerform(.setExposureDuration(duration: duration)))
   }
 
   @Test(
     "Exposure duration out of range",
-    arguments: [0.0, 1.1]
+    arguments: [
+      RationalDuration.zero,
+      RationalDuration(value: 1, scale: 1000000),
+      RationalDuration(value: 1, scale: 101),
+      RationalDuration(value: 11, scale: 10),
+    ]
   )
-  func exposureDurationOutOfRange(_ duration: Double) async throws {
+  func exposureDurationOutOfRange(_ duration: RationalDuration) async throws {
     var sut = CaptureServiceState()
     sut.availableConfigurationCommands.setExposureDuration = true
 
-    sut.capabilities.exposureDurationRange = .init(min: 0.01, max: 1.0)
+    sut.capabilities.exposureDurationRange = .init(
+      min: RationalDuration(value: 1, scale: 100),
+      max: RationalDuration(value: 1, scale: 1)
+    )
 
-    #expect(!sut.canPerform(.setExposureDuration(seconds: duration)))
+    #expect(!sut.canPerform(.setExposureDuration(duration: duration)))
   }
 
   @Test(
@@ -281,5 +297,95 @@ struct CaptureServiceStateTests {
     sut.capabilities.isoRange = .init(min: 100, max: 800)
 
     #expect(!sut.canPerform(.setISO(iso: value)))
+  }
+
+  @Test(arguments: [
+    RationalDuration(frameRate: 60),
+    RationalDuration(frameRate: 45),
+    RationalDuration(frameRate: 30),
+    RationalDuration(frameRate: 15),
+    // The same lengths stated at another scale, as a device reporting in
+    // nanoseconds or 1/600 of a second would.
+    RationalDuration(value: 20, scale: 600),
+    RationalDuration(value: 2, scale: 60),
+  ])
+  func frameDurationWithinRange(_ duration: RationalDuration) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setVideoFrameDuration = true
+
+    sut.capabilities.frameDurationRanges = [
+      ValueRange(min: RationalDuration(frameRate: 30), max: RationalDuration(frameRate: 15)),
+      ValueRange(min: RationalDuration(frameRate: 60), max: RationalDuration(frameRate: 30)),
+    ]
+
+    #expect(sut.canPerform(.setVideoFrameDuration(duration: duration)))
+  }
+
+  @Test(arguments: [
+    RationalDuration(frameRate: 120),
+    RationalDuration(frameRate: 10),
+  ])
+  func frameDurationOutOfRange(_ duration: RationalDuration) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setVideoFrameDuration = true
+    sut.capabilities.frameDurationRanges = [
+      ValueRange(min: RationalDuration(frameRate: 30), max: RationalDuration(frameRate: 15)),
+      ValueRange(min: RationalDuration(frameRate: 60), max: RationalDuration(frameRate: 30)),
+    ]
+
+    #expect(!sut.canPerform(.setVideoFrameDuration(duration: duration)))
+  }
+
+  @Test(arguments: [
+    ImageDimensions(width: 1920, height: 1080),
+    ImageDimensions(width: 1440, height: 1080),
+  ])
+  func dimensionsMatchingACapability(_ dimensions: ImageDimensions) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setDimensions = true
+    sut.capabilities.availableDimensions = [
+      ImageDimensions(width: 1920, height: 1080),
+      ImageDimensions(width: 1440, height: 1080),
+    ]
+
+    #expect(sut.canPerform(.setDimensions(dimensions: dimensions)))
+  }
+
+  @Test(arguments: [
+    // Larger than anything the camera offers.
+    ImageDimensions(width: 3840, height: 2160),
+    ImageDimensions(width: 1920, height: 1081),
+    // Smaller than a format, but not a size the camera produces.
+    ImageDimensions(width: 1280, height: 720),
+    ImageDimensions(width: 1080, height: 1080),
+    // Portrait, which is the landscape frame under an orientation rather than
+    // a size the camera produces.
+    ImageDimensions(width: 1080, height: 1920),
+  ])
+  func dimensionsNoCapabilityOffers(_ dimensions: ImageDimensions) async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setDimensions = true
+    sut.capabilities.availableDimensions = [
+      ImageDimensions(width: 1920, height: 1080),
+      ImageDimensions(width: 1440, height: 1080),
+    ]
+
+    #expect(!sut.canPerform(.setDimensions(dimensions: dimensions)))
+  }
+
+  @Test
+  func dimensionsWithoutTheCommandAvailable() async throws {
+    var sut = CaptureServiceState()
+    sut.capabilities.availableDimensions = [ImageDimensions(width: 1920, height: 1080)]
+
+    #expect(!sut.canPerform(.setDimensions(dimensions: ImageDimensions(width: 1280, height: 720))))
+  }
+
+  @Test
+  func dimensionsWithoutAnyReportedByTheCamera() async throws {
+    var sut = CaptureServiceState()
+    sut.availableConfigurationCommands.setDimensions = true
+
+    #expect(!sut.canPerform(.setDimensions(dimensions: ImageDimensions(width: 1280, height: 720))))
   }
 }

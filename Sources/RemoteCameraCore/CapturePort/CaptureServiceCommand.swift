@@ -50,11 +50,15 @@ extension CaptureServiceCommand {
   public struct TimelapseRecordingArguments: Sendable {
     public let schedule: TaskSchedule
     public let interval: Duration
-    public let frameRate: Double
+    public let frameDuration: RationalDuration
 
-    public init(interval: Duration, frameRate: Double, schedule: TaskSchedule = .now) {
+    public init(
+      interval: Duration,
+      frameDuration: RationalDuration,
+      schedule: TaskSchedule = .now
+    ) {
       self.interval = interval
-      self.frameRate = frameRate
+      self.frameDuration = frameDuration
       self.schedule = schedule
     }
   }
@@ -76,13 +80,16 @@ extension CaptureServiceCommand {
 
     case setExposureMode(mode: ExposureMode)
     case setExposurePointOfInterest(point: Point)
-    case setExposureDuration(seconds: Double)
+    case setExposureDuration(duration: RationalDuration)
     case setISO(iso: Double)
 
     case setWhiteBalanceMode(mode: WhiteBalanceMode)
     case setTemperatureAndTint(value: TemperatureAndTint)
     case setWhiteBalanceGains(gains: WhiteBalanceGains)
     case lockWhiteBalanceWithGrayWorld
+
+    case setVideoFrameDuration(duration: RationalDuration)
+    case setDimensions(dimensions: ImageDimensions)
 
     public struct FeatureTable: Sendable, Equatable {
       public var setLivePhoto = false
@@ -102,6 +109,8 @@ extension CaptureServiceCommand {
       public var setTemperatureAndTint = false
       public var setWhiteBalanceGains = false
       public var lockWhiteBalanceWithGrayWorld = false
+      public var setVideoFrameDuration = false
+      public var setDimensions = false
 
       public init() {}
     }
@@ -127,5 +136,7 @@ extension CaptureServiceCommand.ConfigurationCommand.FeatureTable {
     setTemperatureAndTint = true
     setWhiteBalanceGains = true
     lockWhiteBalanceWithGrayWorld = true
+    setVideoFrameDuration = true
+    setDimensions = true
   }
 }

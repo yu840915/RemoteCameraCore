@@ -4,12 +4,20 @@ import Testing
 struct VideoRecordingSettingsTests {
   @Test(
     arguments: zip(
-      [Duration.seconds(0.1), Duration.seconds(1)],
-      [10.0, 1.0],
+      [
+        RationalDuration(value: 1, scale: 10),
+        RationalDuration(value: 1, scale: 1),
+        RationalDuration(value: 1001, scale: 30000),
+      ],
+      [
+        10.0,
+        1.0,
+        30000.0 / 1001.0,
+      ],
     ),
   )
   func estimateFrameRateFromFrameDuration(
-    _ frameDuration: Duration,
+    _ frameDuration: RationalDuration,
     _ frameRate: Double,
   )
     async throws
@@ -21,13 +29,25 @@ struct VideoRecordingSettingsTests {
 
   @Test(
     arguments: zip(
-      [10.0, 1.0, 0.0, -1.0],
-      [Duration.milliseconds(100), Duration.seconds(1), .zero, .zero],
+      [
+        DurationScale(10),
+        DurationScale(1),
+        DurationScale(30),
+        DurationScale(0),
+        DurationScale(-1),
+      ],
+      [
+        RationalDuration(value: 100, scale: 1000),
+        RationalDuration(value: 1, scale: 1),
+        RationalDuration(value: 1, scale: 30),
+        RationalDuration.zero,
+        RationalDuration.zero,
+      ],
     ),
   )
   func initWithFrameRate(
-    _ frameRate: Double,
-    _ frameDuration: Duration,
+    _ frameRate: DurationScale,
+    _ frameDuration: RationalDuration,
   ) async throws {
     let settings = VideoRecordingSettings(frameRate: frameRate)
 

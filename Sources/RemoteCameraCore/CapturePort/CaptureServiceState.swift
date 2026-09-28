@@ -67,6 +67,12 @@ extension CaptureServiceState: CommandAvailabilityChecking {
     case .lockWhiteBalanceWithGrayWorld:
       availableConfigurationCommands.lockWhiteBalanceWithGrayWorld
         && capabilities.whiteBalanceModes.contains(.locked)
+    case .setVideoFrameDuration(let arg):
+      availableConfigurationCommands.setVideoFrameDuration
+        && capabilities.frameDurationRanges.contains(where: { $0.contains(arg) })
+    case .setDimensions(let arg):
+      availableConfigurationCommands.setDimensions
+        && capabilities.availableDimensions.contains(arg)
     }
   }
 }
@@ -119,12 +125,16 @@ public struct CameraConfiguration: Sendable, Equatable {
 
   public var exposureMode: ExposureMode?
   public var exposurePointOfInterest: Point?
-  public var exposureDuration: Double?
+  public var exposureDuration: RationalDuration?
   public var iso: Double?
 
   public var whiteBalanceMode: WhiteBalanceMode?
   public var temperatureAndTint: TemperatureAndTint?
   public var whiteBalanceGains: WhiteBalanceGains?
+
+  public var minimumFrameDuration: RationalDuration?
+  public var maximumFrameDuration: RationalDuration?
+  public var dimensions: ImageDimensions?
 
   public init() {}
 }
@@ -138,7 +148,7 @@ public struct CameraCapabilities: Sendable, Equatable {
   public var lensPositionRange: ValueRange<Double>?
   public var exposureModes: [ExposureMode] = []
   public var isoRange: ValueRange<Double>?
-  public var exposureDurationRange: ValueRange<Double>?
+  public var exposureDurationRange: ValueRange<RationalDuration>?
 
   public var whiteBalanceModes: [WhiteBalanceMode] = []
   public var whiteBalanceTemperatureRange: ValueRange<Double>?
@@ -146,6 +156,9 @@ public struct CameraCapabilities: Sendable, Equatable {
   public var whiteBalanceRedGainsRange: ValueRange<Double>?
   public var whiteBalanceGreenGainsRange: ValueRange<Double>?
   public var whiteBalanceBlueGainsRange: ValueRange<Double>?
+
+  public var frameDurationRanges: [ValueRange<RationalDuration>] = []
+  public var availableDimensions: [ImageDimensions] = []
 
   public init() {}
 }
