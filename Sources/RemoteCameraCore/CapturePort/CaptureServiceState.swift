@@ -125,7 +125,7 @@ public struct CameraConfiguration: Sendable, Equatable {
 
   public var exposureMode: ExposureMode?
   public var exposurePointOfInterest: Point?
-  public var exposureDuration: Double?
+  public var exposureDuration: RationalDuration?
   public var iso: Double?
 
   public var whiteBalanceMode: WhiteBalanceMode?
@@ -148,7 +148,7 @@ public struct CameraCapabilities: Sendable, Equatable {
   public var lensPositionRange: ValueRange<Double>?
   public var exposureModes: [ExposureMode] = []
   public var isoRange: ValueRange<Double>?
-  public var exposureDurationRange: ValueRange<Double>?
+  public var exposureDurationRange: ValueRange<RationalDuration>?
 
   public var whiteBalanceModes: [WhiteBalanceMode] = []
   public var whiteBalanceTemperatureRange: ValueRange<Double>?

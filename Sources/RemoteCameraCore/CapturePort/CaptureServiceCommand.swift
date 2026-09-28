@@ -50,11 +50,15 @@ extension CaptureServiceCommand {
   public struct TimelapseRecordingArguments: Sendable {
     public let schedule: TaskSchedule
     public let interval: Duration
-    public let frameRate: Double
+    public let frameDuration: RationalDuration
 
-    public init(interval: Duration, frameRate: Double, schedule: TaskSchedule = .now) {
+    public init(
+      interval: Duration,
+      frameDuration: RationalDuration,
+      schedule: TaskSchedule = .now
+    ) {
       self.interval = interval
-      self.frameRate = frameRate
+      self.frameDuration = frameDuration
       self.schedule = schedule
     }
   }
@@ -76,7 +80,7 @@ extension CaptureServiceCommand {
 
     case setExposureMode(mode: ExposureMode)
     case setExposurePointOfInterest(point: Point)
-    case setExposureDuration(seconds: Double)
+    case setExposureDuration(duration: RationalDuration)
     case setISO(iso: Double)
 
     case setWhiteBalanceMode(mode: WhiteBalanceMode)

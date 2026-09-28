@@ -56,13 +56,7 @@ extension ValueRange: Equatable {
   }
 }
 
-extension ValueRange: CustomStringConvertible where Bound == Double {
-  public var description: String {
-    "[\(min), \(max)]"
-  }
-}
-
-extension ValueRange where Bound: SignedInteger {
+extension ValueRange: CustomStringConvertible {
   public var description: String {
     "[\(min), \(max)]"
   }

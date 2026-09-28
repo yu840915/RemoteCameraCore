@@ -229,30 +229,46 @@ struct CaptureServiceStateTests {
 
   @Test(
     "Exposure duration within range",
-    arguments: [0.1, 0.5, 1.0]
+    arguments: [
+      RationalDuration(value: 1, scale: 100),
+      RationalDuration(value: 1, scale: 10),
+      RationalDuration(value: 1, scale: 2),
+      RationalDuration(value: 1, scale: 1),
+    ]
   )
-  func exposureDurationWithRange(_ duration: Double) async throws {
+  func exposureDurationWithRange(_ duration: RationalDuration) async throws {
     var sut = CaptureServiceState()
-    sut.capabilities.exposureDurationRange = .init(min: 0.01, max: 1.0)
+    sut.capabilities.exposureDurationRange = .init(
+      min: RationalDuration(value: 1, scale: 100),
+      max: RationalDuration(value: 1, scale: 1)
+    )
 
     sut.availableConfigurationCommands.setExposureDuration = false
-    #expect(!sut.canPerform(.setExposureDuration(seconds: duration)))
+    #expect(!sut.canPerform(.setExposureDuration(duration: duration)))
 
     sut.availableConfigurationCommands.setExposureDuration = true
-    #expect(sut.canPerform(.setExposureDuration(seconds: duration)))
+    #expect(sut.canPerform(.setExposureDuration(duration: duration)))
   }
 
   @Test(
     "Exposure duration out of range",
-    arguments: [0.0, 1.1]
+    arguments: [
+      RationalDuration.zero,
+      RationalDuration(value: 1, scale: 1000000),
+      RationalDuration(value: 1, scale: 101),
+      RationalDuration(value: 11, scale: 10),
+    ]
   )
-  func exposureDurationOutOfRange(_ duration: Double) async throws {
+  func exposureDurationOutOfRange(_ duration: RationalDuration) async throws {
     var sut = CaptureServiceState()
     sut.availableConfigurationCommands.setExposureDuration = true
 
-    sut.capabilities.exposureDurationRange = .init(min: 0.01, max: 1.0)
+    sut.capabilities.exposureDurationRange = .init(
+      min: RationalDuration(value: 1, scale: 100),
+      max: RationalDuration(value: 1, scale: 1)
+    )
 
-    #expect(!sut.canPerform(.setExposureDuration(seconds: duration)))
+    #expect(!sut.canPerform(.setExposureDuration(duration: duration)))
   }
 
   @Test(
